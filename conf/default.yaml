@@ -2,7 +2,7 @@
 #  adintool-like options
 ###########################
 in: mic
-out: adinnet
+out: file #adinnet
 filename: result/%Y%m%d_%R.wav
 startid: 0
 server: localhost
@@ -20,7 +20,7 @@ logfilefmt: _logs/%Y%m%d/log_%Y%m%d%H%M%S.log
 
 enable_rawsave: False
 rawfilefmt: raw/%Y%m%d/record_%u_%R_%H%M%S.wav
-rotate_min: 1
+rotate_min: 15
 
 enable_timestamp: False
 timestampfile: timestamp.lab

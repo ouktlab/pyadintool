@@ -1,5 +1,6 @@
 import lib.io
 import lib.pipeline
+import re
 import numpy as np
 import logging
     
@@ -32,14 +33,13 @@ def usage():
     # 
     parser.add_argument('--freq', type=int)
     parser.add_argument('--nch', type=int)
-    #parser.add_argument('--raw', type=str, default='file')
 
     #
     #parser.add_argument('--nosegment', action='store_const', const=True)
     #parser.add_argument('--oneshot', action='store_const', const=True)
 
     #
-    parser.add_argument('--device', type=str)
+    parser.add_argument('--device')
     
     #
     parser.add_argument('--infile', type=str, help='')
@@ -102,15 +102,25 @@ def setup_source(config):
     # microphone input
     if config['in'] == 'mic':
         devlist = lib.io.SoundDeviceSource.query_device()
-        devname = {x['name']:i for i, x in enumerate(devlist)}
-        deviceid = devname.get(config['device'])
+        devname2id = {x['name']:i for i, x in enumerate(devlist)}
+        devid2name = [x['name'] for i, x in enumerate(devlist)]
 
-        if deviceid is None:
-            logger = logging.getLogger(__name__)
-            logger.info(f'[ERROR]: no such device id {deviceid}')
-            quit()
+        device = config['device']
+        if re.fullmatch(r'[0-9]+', device):
+            deviceid = int(device)
+            logger.info(f'[LOG]: SOURCE: use device {deviceid}:{devid2name[deviceid]}')   
+        else:
+            deviceid = devname2id.get(config['device'])
+            if deviceid is None:
+                logger = logging.getLogger(__name__)
+                logger.info(f'[LOG]: no such device name "{config["device"]}". use default setting.')
 
-        logger.info(f'[LOG]: SOURCE: use device {deviceid}:{config["device"]}')            
+                deviceid = lib.io.SoundDeviceSource.get_default_device()
+                if deviceid is None:
+                    logger.info(f'[ERROR]: no such deviceid {deviceid}:{devid2name[deviceid]}.')
+                    quit()
+
+        logger.info(f'[LOG]: SOURCE: use device {deviceid}:{devid2name[deviceid]}')   
         source = lib.io.SoundDeviceSource(deviceid, config['freq'], config['nch'])
 
     # audio file input

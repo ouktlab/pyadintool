@@ -1,10 +1,10 @@
 # requirement: python version over 3.10 (required 3.9 for networkx used in torch, 3.10 for shiboken6 used in pyqtgraph)
-python=python3.9
+python=python3.10
 stage=0
 
 if [ $stage -le 0 ]; then
   sudo apt update
-  sudo apt install -y python3-venv emacs wavesurfer alsa-utils libasound2-dev libportaudio2 \
+  sudo apt install -y ${python}-venv emacs wavesurfer alsa-utils libasound2-dev libportaudio2 libxcb-cursor0 \
        libgl1-mesa-dev libfontconfig1 libxkbcommon-x11-0 \
        libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0
 fi

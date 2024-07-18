@@ -34,14 +34,14 @@ This toolkit has been developed as a simple python clone of [adintool](https://g
 
 
 ## Installation ##
-### Supported System Requirements ###
-* Ubuntu (22.04)
-    * Windows WSL is avairable
+### System Requirements ###
+* Ubuntu 22.04 and Ubuntu 22.04 on Windows WSL
     * alsa-utils
     * libasound2-dev
     * libportaudio2
     * ..., and other GUI and audio libraries
-* Python3.10 (Python3.9 if gui plot is not used) and libraries
+* Windows 11
+* Python3.10~3.12 (Python3.9 if gui plot is not used) and libraries
     * torch
     * torchaudio
     * numpy
@@ -52,50 +52,66 @@ This toolkit has been developed as a simple python clone of [adintool](https://g
     * pyqtgraph (for realtime plot)
     * PySide6 (for realtime plot)
 
-### Setup ###
-* Install libraries automatically for ubuntu environment using "apt" and "pip install" commands 
+### Setup on Ubuntu ###
+* Copy and edit shell script: change the python version
 ```
-sh setup.sh
+cp setup_ubuntu.sh setup_ubuntu_local.sh
 ```
+* Install libraries automatically for ubuntu environment using "sudo apt install" and "pip install" commands 
+```
+sh setup_ubuntu_local.sh
+```
+* The above script also create "venv" environment (venv/) in the current directory. Activate venv when you run our python scripts.
 
 * We have not specified required Ubuntu libaries. Therefore, some unnecessary libaries may be installed by "apt install" in the setup.sh. 
 
+### Setup on Windows ###
+* Create virtual environemnt
+```
+python3 -m venv venv
+.\venv\Scripts\activate
+```
+* Install python libraries by using batch file
+```
+setup_win.bat
+```
+* Sometimes edit the batch file to change the python version
+
 ## Usage and Examples ##
 ### Run default setting ###
+* Activate virtual environment
+```
+. venv/bin/activate
+```
+```
+.\venv\Scripts\activate
+```
 * Pyadintool requires configuration file for run
 ```
 python3 pyadintool.py [conf]
 ```
-* Check avairable sound device in advance
+* Check avairable sound devices (device list) in advance. 
 ```
 python3 pyadintool.py devinfo
 ``` 
-* Run adinnet server (example) before running pyadintool.py. This server receive segmented audio data from pyadintool.py. 
-```
-python3 lib/egs.server.py
-``` 
 
-* Use default configuration using ML-VAD: input stream is mic, output stream is adinnet, sampling frequency is 16k Hz, and the number of mic. channels is 1. 
+* Use default configuration using ML-VAD: input stream is "mic", output stream is "file", sampling frequency is 16k Hz, and the number of mic. channels is 1. 
 ```
 python3 pyadintool.py conf/default.yaml
 ``` 
+
+* Change the audio device by using --device option in the case of Windows. The device ID must be selected from the device list. 
+```
+python3 pyadintool.py conf/default.yaml --device 1
+``` 
+
 
 * Switch to power-and-thresholding VAD configuration
 ```
 python3 pyadintool.py conf/power.yaml
 ``` 
 
-* Another choice to check the "adinnet" function, run Julius ASR with adinnet mode as follows 
-```
-sudoapt install git-lfs
-git lfsinstall
-git clone https://github.com/julius-speech/dictation-kit
-cd dictation-kit
-sh run-linux-dnn.sh -input adinnet -adport 5530
-```
-
-
-### Example-01: Input from file  ###
+### Example-01: Set input stream to a audio file  ###
 ```
 python3 pyadintool.py conf/default.yaml --in file
 ```
@@ -103,7 +119,7 @@ python3 pyadintool.py conf/default.yaml --in file
 echo auido.wav | python3 pyadintool.py conf/default.yaml --in file
 ```
 
-### Example-02: Save segmented audio to files  ###
+### Example-02: Save segmented audio signals to files  ###
 ```
 python3 pyadintool.py conf/default.yaml --out file
 ```
@@ -111,7 +127,20 @@ python3 pyadintool.py conf/default.yaml --out file
 python3 pyadintool.py conf/default.yaml --out file --filename segs/result_%Y%m%d_%H%M_%R.wav --startid 0
 ```
 
-### Example-03: Send segmented audio to servers  ###
+### Example-03: Send segmented audio signals to servers  ###
+* Run adinnet server (example) before running pyadintool.py. This server receive segmented audio data from pyadintool.py. 
+```
+python3 lib/egs.server.py
+``` 
+* Or another choice to check the "adinnet" function, run Julius ASR with adinnet mode as follows 
+```
+sudoapt install git-lfs
+git lfsinstall
+git clone https://github.com/julius-speech/dictation-kit
+cd dictation-kit
+sh run-linux-dnn.sh -input adinnet -adport 5530
+```
+* Then, run the main script with adinnet option. Stop it by Ctrl-C. 
 ```
 python3 pyadintool.py conf/default.yaml --out adinnet
 ```
@@ -122,7 +151,7 @@ python3 pyadintool.py conf/default.yaml --out adinnet --server localhost --port 
 python3 pyadintool.py conf/default.yaml --out adinnet --server localhost,l92.168.1.30 --port 5530,5530
 ```
 
-### Example-04: Set multiple outputs ###
+### Example-04: Set multiple output streams ###
 ```
 python3 pyadintool.py conf/default.yaml --out adinnet-file
 ```
@@ -137,10 +166,19 @@ python3 pyadintool.py conf/default.yaml --enable_timestamp --timestampfile resul
 python3 pyadintool.py conf/default.yaml --enable_logsave
 ```
 ```
-python3 pyadintool.py conf/default.yaml --enable_logsave --logfilefmt log_%Y%d%m.log
+python3 pyadintool.py conf/default.yaml --enable_logsave --logfilefmt log_%Y%m%d.log
 ```
+* Available format
+    * %Y: year
+    * %m: month
+    * %d: day
+    * %H: hour
+    * %M: minutes
+    * %S: second
+    * %u: host name
+    * %R: rotation id
 
-### Example-07: Filelist batch processing ###
+### Example-07: Switch mode to filelist batch processing ###
 ```
 python3 pyadintool.py conf/default.yaml --enable_list --inlist wavlist.txt --tslist tslist.txt
 ```
@@ -165,8 +203,16 @@ python3 pyadintool.py conf/default.yaml --device default
 ```
 python3 pyadintool.py conf/default.yaml --enable_plot
 ```
-
+* Clikc the close button of the window to stop
 ![figure of realtime plot](images/fig_realtimeplot.png)
+
+### Example-10: Save raw input signals to files
+```
+python3 pyadintool.py conf/default.yaml --enable_rawsave
+```
+```
+python3 pyadintool.py conf/default.yaml --enable_rawsave --rawfilefmt raw/%Y%m%d/record_%u_%R_%H%M%S.wav
+```
 
 ## Options ##
 ### --in [IN] ###

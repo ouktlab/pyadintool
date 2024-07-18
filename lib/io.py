@@ -1,4 +1,5 @@
 import os
+import platform
 import socket
 import struct
 import datetime
@@ -28,9 +29,14 @@ def path_embed_tag(path, rotateid=None):
     if '%S' in path:
         path = path.replace('%S', now.strftime('%S'))
 
-    uname = os.uname()[1]
+    if os.name == 'posix':        
+        uname = os.uname()[1]
+    elif os.name == 'nt':
+        uname = platform.node()
+        
     if '%u' in path:
         path = path.replace('%u', uname)
+        pass
 
     if rotateid is not None and '%R' in path:
         path = path.replace('%R', f'{rotateid:05d}')
@@ -64,7 +70,8 @@ def setup_logger(enable_logsave, logfilefmt):
             
         # set up file handler
         file_handler = FileHandler(
-            logfilename
+            logfilename,
+            encoding='utf-8'
         )
         file_handler.setLevel(DEBUG)
         file_handler.setFormatter(
@@ -424,6 +431,9 @@ try:
     class SoundDeviceSource(Source):
         def query_device():
             return sd.query_devices()
+
+        def get_default_device():
+            return sd.default.device[0]
 
         def callback(self, indata, frames, time, status):
             if status:

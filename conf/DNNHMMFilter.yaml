@@ -18,10 +18,8 @@ classifier:
     tf_dims: 512
     tf_nhead: 8
     tf_num_layers: 2
-  path: rtakeda/vad_test
-  #path: my-awesome-model
-  #path: model/epoch-avg00-02.pt 
-
+  path: ouktlab/pyadintool-stftvad-SITEVoiceClassifier-v2407
+  
 n_bwd: 50
 n_fwd: 0
 n_offset: 20
