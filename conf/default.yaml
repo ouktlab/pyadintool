@@ -1,0 +1,63 @@
+###########################
+#  adintool-like options
+###########################
+in: mic
+out: adinnet
+filename: result/%Y%m%d_%R.wav
+startid: 0
+server: localhost
+port: 5530
+freq: 16000
+nch: 1
+
+##########################
+#       pyadintool
+##########################
+device: default
+
+enable_logsave: False
+logfilefmt: _logs/%Y%m%d/log_%Y%m%d%H%M%S.log
+
+enable_rawsave: False
+rawfilefmt: raw/%Y%m%d/record_%u_%R_%H%M%S.wav
+rotate_min: 1
+
+enable_timestamp: False
+timestampfile: timestamp.lab
+
+enable_plot: False
+
+##########################
+#   model descriptions
+##########################
+# voice activity detection
+tagger:
+  package: usr.stftvad
+  class: stftSlidingVAD
+  params:
+    yamlfile: conf/DNNHMMFilter.yaml
+    min_frame: 4
+    nshift: 160
+    nbuffer: 12000
+    device: cpu
+    nthread: 2
+
+# post processing
+postproc:
+  package: usr.stftvad
+  class: PostProc
+  params:
+    fs: 16000
+    margin_begin: 0.20
+    margin_end: 0.25
+    shift_time: 0.20
+
+#
+plotwin:
+  nbuffer: 800
+  #selects: [0, 1, 2] # for debug
+  selects: [1, 2]
+  nsample: 32000
+  nch: 3
+  nskip: 10
+  scale: 1.0

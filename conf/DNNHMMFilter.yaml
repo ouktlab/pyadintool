@@ -1,0 +1,27 @@
+probfilter:
+  classname: BinaryProbFilter
+  package: usr.stftvad
+  params:
+    trp1_self: 0.99
+    trp2_self: 0.99
+    pw_1: 0.5
+
+classifier:
+  classname: SITEVoiceClassifier
+  package: usr.nn
+  params:
+    n_bwd: 50
+    n_decimate: 2
+    n_fbin: 256
+    n_fwd: 0
+    n_smooth: 1
+    tf_dims: 512
+    tf_nhead: 8
+    tf_num_layers: 2
+  path: rtakeda/vad_test
+  #path: my-awesome-model
+  #path: model/epoch-avg00-02.pt 
+
+n_bwd: 50
+n_fwd: 0
+n_offset: 20
