@@ -13,7 +13,6 @@ from importlib import import_module
 from huggingface_hub import PyTorchModelHubMixin
 
 import lib.pipeline
-from lib.io import _SEG_STATE_NONACTIVE, _SEG_STATE_ACTIVE, _SEG_STATE_END
 
 """
 """
@@ -271,7 +270,6 @@ class stftSlidingVAD(lib.pipeline.Processor):
         # 
         outputs = torch.zeros((n_len, 2))
         outputs[:,0] = self.delayed_data[-(self.delayed_sample+n_len):-self.delayed_sample]
-        outputs[:,1] = self.prev_lab
 
         # 
         if feats is not None:
@@ -283,16 +281,20 @@ class stftSlidingVAD(lib.pipeline.Processor):
                 outputs[i*self.nshift:(i+1)*self.nshift, 1] = lab
 
             self.prev_lab = lab
+            outputs[(i+1)*self.nshift:,1] = lab
+        else:
+            outputs[:,1] = self.prev_lab
 
         return outputs.detach().cpu().numpy()
 
+"""
 """
 """
 class PostProc(lib.pipeline.Processor):
     def __init__(self, fs, margin_begin, margin_end, shift_time=0.2):
         self.n_buf = int(fs * (margin_begin + margin_end))
         self.n_margin_begin = int(fs * margin_begin)
-        self.n_margin_end = int(fs * margin_begin)
+        self.n_margin_end = int(fs * margin_end)
         
         self.buf = np.zeros((self.n_buf, 1), dtype=float)
         self.state = 0
@@ -390,7 +392,6 @@ class PostProc(lib.pipeline.Processor):
 
                     logger = logging.getLogger(__name__)
                     logger.info(f'[LOG]: segment: {self.time_start:.3f} {self.time_end:.3f}             ')
-                    #print(f'[LOG]: segment: {self.time_start:.2f} {self.time_end:.2f}              ')
                     
                 pass
         
@@ -409,3 +410,4 @@ class PostProc(lib.pipeline.Processor):
             'end':self.time_end
         }
 
+"""

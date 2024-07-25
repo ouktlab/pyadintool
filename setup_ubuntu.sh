@@ -23,3 +23,9 @@ if [ $stage -le 2 ]; then
   . venv/bin/activate
   ${python} -m pip install PySide6 pyqtgraph
 fi
+
+# for silero vad
+if [ $stage -le 3 ]; then
+  . venv/bin/activate
+  ${python} -m pip install silero-vad
+fi

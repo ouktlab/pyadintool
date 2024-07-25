@@ -1,6 +1,6 @@
 probfilter:
   classname: BinaryProbFilter
-  package: usr.stftvad
+  package: usr.fdvad
   params:
     trp1_self: 0.99
     trp2_self: 0.99

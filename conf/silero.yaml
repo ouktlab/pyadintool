@@ -2,7 +2,7 @@
 #  adintool-like options
 ###########################
 in: mic
-out: file #adinnet
+out: file # adinnet
 filename: result/%Y%m%d_%R.wav
 startid: 0
 server: localhost
@@ -32,15 +32,11 @@ enable_plot: False
 ##########################
 # voice activity detection
 tagger:
-  package: usr.fdvad
-  class: stftSlidingVAD
+  package: usr.silerovad
+  class: SileroVAD
   params:
-    yamlfile: conf/dnnhmmfilter.yaml
-    min_frame: 4
-    nshift: 160
-    nbuffer: 12000
-    device: cpu
-    nthread: 2
+    freq: 16000
+    thre: 0.5
 
 # post processing
 postproc:
@@ -48,9 +44,9 @@ postproc:
   class: PostProc
   params:
     fs: 16000
-    margin_begin: 0.20
-    margin_end: 0.25
-    shift_time: 0.20
+    margin_begin: 0.2
+    margin_end: 0.1
+    shift_time: 0.0
 
 #
 plotwin:

@@ -6,15 +6,16 @@ This toolkit has been developed as a simple python clone of [adintool](https://g
 ## Key Features ##
 ### Interface ###
 * Real-time processing on CPU using multi-threading (requires at least two or three cores)
-* Support sending segmented audio data to servers, such as Julius
+* Support sending segmented audio data to servers
 * Support long recording and saving it to files
 * Support gui plot of results
 * Support batch processing using filelist
 
 ### Supported Voice Activity Detection (VAD) ###
-* Simple Power-based VAD in time-domain
-* VAD based on machine learning (ML)
-    * Block-wise transformer-encoder VAD with HMM in STFT domain
+* Power-based VAD in time-domain
+    * suitable for silent environment. e.g., head-set microphone.
+* ML-based VAD in STFT domain
+    * Scale-invariant 
 
 ### ML-VAD oriented for spoken dialogue system in real environments ###
 * Scale-invariant processing: less influenced by the gain setting of microphone

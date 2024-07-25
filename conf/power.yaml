@@ -32,7 +32,7 @@ enable_plot: False
 ##########################
 # voice activity detection
 tagger:
-  package: usr.timevad
+  package: usr.tdvad
   class: SimpleVAD
   params:
     n_buf: 8000
@@ -45,7 +45,7 @@ tagger:
 
 # post processing
 postproc:
-  package: usr.stftvad
+  package: usr.tdvad
   class: PostProc
   params:
     fs: 16000
