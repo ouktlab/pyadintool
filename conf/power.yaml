@@ -38,7 +38,7 @@ tagger:
     n_buf: 8000
     n_win: 800
     n_skip: 80
-    flramp: 300
+    flramp: 500
     thre: 0.5
     n_ch: 1
     nbits: 16

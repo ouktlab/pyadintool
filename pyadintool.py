@@ -8,7 +8,7 @@ def usage():
     import argparse
     
     # argument analysis
-    parser = argparse.ArgumentParser(add_help=False)
+    parser = argparse.ArgumentParser()
 
     # required
     parser.add_argument('config', type=str)
@@ -31,39 +31,53 @@ def usage():
                         help='port number of adin-server')
 
     # 
-    parser.add_argument('--freq', type=int)
-    parser.add_argument('--nch', type=int)
+    parser.add_argument('--freq', type=int,
+                        help='sampling frequency of input device in Hz')
+    parser.add_argument('--nch', type=int,
+                        help='the number of channels of input device')
 
     #
     #parser.add_argument('--nosegment', action='store_const', const=True)
     #parser.add_argument('--oneshot', action='store_const', const=True)
 
     #
-    parser.add_argument('--device')
+    parser.add_argument('--device', help='audio device id or name')
     
     #
-    parser.add_argument('--infile', type=str, help='')
+    parser.add_argument('--infile', type=str,
+                        help='input audio filename')
     
-    parser.add_argument('--enable_logsave', action='store_const', const=True)
-    parser.add_argument('--logfilefmt', type=str, help='')
+    parser.add_argument('--enable_logsave', action='store_const',
+                        const=True, help='save log file')
+    parser.add_argument('--logfilefmt', type=str,
+                        help='log file format')
     
     #
-    parser.add_argument('--enable_rawsave', action='store_const', const=True)
-    parser.add_argument('--rawfilefmt', help='')
+    parser.add_argument('--enable_rawsave',
+                        action='store_const', const=True,
+                        help='save raw input signal to files')
+    parser.add_argument('--rawfilefmt',
+                        help='raw audio file format')
     parser.add_argument('--rotate_min', type=int,
-                        help="rotation time in minutes for saving raw audio files")
+                        help="duration in minutes for saving raw audio files")
 
-    parser.add_argument('--enable_timestamp', action='store_const', const=True)
+    parser.add_argument('--enable_timestamp',
+                        action='store_const', const=True,
+                        help='output voice active sections in seconds')
     parser.add_argument('--timestampfile', type=str,
                         help="filename of timestamp file")
-
     #
-    parser.add_argument('--enable_plot', action='store_const', const=True)
+    parser.add_argument('--enable_plot', action='store_const', const=True,
+                        help='plot waveform and speech activations')
 
     ### 
-    parser.add_argument('--enable_list', action='store_const', const=True)
-    parser.add_argument('--inlist', type=str)
-    parser.add_argument('--tslist', type=str)
+    parser.add_argument('--enable_list',
+                        action='store_const', const=True,
+                        help='run batch processing')
+    parser.add_argument('--inlist', type=str,
+                        help='input audiofile list for batch processing')
+    parser.add_argument('--tslist', type=str,
+                        help='output labelfile list for batch processing')
     
     
     ###
@@ -307,7 +321,7 @@ def run_proclist(config):
                 postproc.reset()
                          
 
-    logger.info(f'[LOG]: end processing for all files')
+    logger.info(f'[LOG]: end of processing')
 
 
 

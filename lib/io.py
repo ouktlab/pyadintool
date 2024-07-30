@@ -385,45 +385,10 @@ class TimestampTextSinkFile(Sink):
     """
     def write(self, data):
         state = data['state']
-
         # end of segment
         if state == _SEG_STATE_END:
             print(f"{data['start']:.3f}\t{data['end']:.3f}\tspeech", file=self.stream, flush=True)
-                        
-        ##
-        pass
-
-try:
-    import pyaudio
-    import struct
-
-    class PyAudioSource(Source):
-        def __init__(self, fs, nch, nframe):
-            self.nframe = nframe
-            self.fs = fs
-            self.nch = nch
-            self.audio = pyaudio.PyAudio()
-
-        def open(self):
-            self.stream = self.audio.open(format=pyaudio.paInt16,
-                                          channels=self.nch,
-                                          rate=self.fs,
-                                          input=True,
-                                          frames_per_buffer=800)
-        
-        def close(self):
-            if self.stream is not None:
-                self.stream.stop_stream()
-                self.stream.close()
-            self.audio.terminate()
-        
-        def read(self):
-            data = self.stream.read(self.nframe)
-            data = np.frombuffer(data, dtype="int16")/32768.0
-            return data.reshape(-1, self.nch)
-        
-except:
-    pass
+            
         
 try:
     import sounddevice as sd
@@ -482,34 +447,6 @@ try:
                 return None
             return self.q.get()
 
-    class SoundDeviceSink(Sink):
-        def query_device():
-            return sd.query_devices()
-        
-        def __init__(self, device, fs, nch, nframe):
-            self.device = device
-            self.nch = nch
-            self.fs = fs
-            self.nframe = nframe
-            
-            self.stream = sd.OutputStream(device=self.device,
-                                          channels=self.nch,
-                                          samplerate=self.fs,
-                                          blocksize=int(nframe*2.0))
-
-        def open(self):
-            self.stream.start()
-
-        def close(self):
-            self.stream.stop()
-            self.stream.close()
-
-        """
-        data: [Len, Ch]
-        """
-        def write(self, data):
-            self.stream.write(data)
-            return data
 except:
     pass
 
