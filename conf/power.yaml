@@ -35,12 +35,10 @@ tagger:
   package: usr.tdvad
   class: SimpleVAD
   params:
-    n_buf: 8000
     n_win: 800
     n_skip: 80
     flramp: 500
     thre: 0.5
-    n_ch: 1
     nbits: 16
 
 # post processing
@@ -49,9 +47,9 @@ postproc:
   class: PostProc
   params:
     fs: 16000
-    margin_begin: 0.20
-    margin_end: 0.25
-    shift_time: 0.20
+    margin_begin: 0.15
+    margin_end: 0.15
+    shift_time: 0.0
 
 #
 plotwin:

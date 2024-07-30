@@ -3,106 +3,145 @@
 """
 import numpy as np
 import logging
-import lib.pipeline
+import lib.pipeline as pl
 from lib.io import _SEG_STATE_NONACTIVE, _SEG_STATE_ACTIVE, _SEG_STATE_END
 
 '''
 '''
-class HMMSmoother(lib.pipeline.Processor):
-    def __init__(self, ptrans_self=0.99):
-        self.post = np.zeros(2, dtype='float32')
-        
-        self.prior = np.zeros(2, dtype='float32')        
-        self.prior[0] = 1
+class PairedBuffer:
+    def __init__(self, n_init, dtype='float32'):
+        self.n_init = n_init
+        self.dtype = dtype
+        self.reset()
 
-        self.p11 = ptrans_self
-        self.p12 = 1 - ptrans_self
-        self.p21 = 1 - ptrans_self
-        self.p22 = ptrans_self
-        pass
+    def reset(self):
+        self.n_labeled = self.n_init
+        self.buf_data = np.zeros((self.n_init, 1), dtype=self.dtype)
+        self.buf_label = np.zeros((self.n_init, 1), dtype=self.dtype)        
+
+    def push(self, data):
+        self.buf_data = np.concatenate([self.buf_data, data], axis=0)
+
+    def get_unlabeled(self, n_len):
+        pos_end = self.n_labeled + n_len
+        if pos_end > len(self.buf_data):
+            return None        
+        return self.buf_data[self.n_labeled:self.n_labeled+n_len]
+
+    def set_label(self, labels):
+        self.buf_label = np.concatenate([self.buf_label, labels], axis=0)
+        self.n_labeled += len(labels)
+
+    def pop(self, n_len):
+        if n_len > self.n_labeled:
+            print(f'[ERROR]: required size {n_len} is larger than labeled data size {self.n_labeled}')
+            quit()
+        
+        data = self.buf_data[:n_len]
+        label = self.buf_label[:n_len]
+
+        self.buf_data = self.buf_data[n_len:]
+        self.buf_label = self.buf_label[n_len:]
+        self.n_labeled -= n_len
+
+        return np.concatenate([data, label], axis=1)
+        
+
+'''
+'''
+class HMMSmoother(pl.Processor):
+    def __init__(self, ptrans_self=0.99, dtype='float32'):
+        self.dtype = dtype
+        self.prior = np.array([1, 0], dtype=dtype)
+        self.trans_prob = np.array([
+            [ptrans_self, 1 - ptrans_self],
+            [1 - ptrans_self, ptrans_self]
+        ], dtype=dtype)
+
+    def reset(self):
+        self.prior = np.array([1, 0], dtype=dtype)
 
     def update(self, data):
         n_data = len(data)
+        labels = np.zeros(data.shape, dtype=self.dtype)
 
-        labels = np.zeros(data.shape, dtype='float32')
-        for t in range(n_data):
-            self.post[0] = self.p11 * self.prior[0] + self.p12 * self.prior[1]
-            self.post[1] = self.p21 * self.prior[0] + self.p22 * self.prior[1]
+        for t, x in enumerate(data):
+            post = np.matmul(self.trans_prob, self.prior)
+            post[0] *= (1 -x)
+            post[1] *= x
 
-            self.post[0] *= (1 - data[t,0])
-            self.post[1] *= data[t,0]
+            post = post / np.sum(post)
+            self.prior = post
 
-            self.post = self.post / np.sum(self.post)
-            self.prior = self.post
-
-            labels[t] = self.post[1]
+            labels[t] = post[1]
 
         return labels
 
 """
   Power-based Simple VAD
 """
-class SimpleVAD(lib.pipeline.Processor):
-    def __init__(self, n_buf, n_win, flramp=300,
-                 n_skip=80, thre=0.5, n_ch=1, nbits=16):
-        self.n_buf = n_buf
-        self.buf = np.zeros((n_buf, n_ch), dtype='float32')
+class SimpleVAD(pl.Processor):
+    def __init__(self, n_win, flramp=300,
+                 n_skip=80, thre=0.5, nbits=16, dtype='float32'):
+        self.dtype = dtype
+        
         self.n_win = n_win
-
         self.flrpower = ((flramp / (2**(nbits-1)-1))**2)
+        self.n_skip = n_skip
         self.thre = thre
 
-        self.n_skip = n_skip
-        self.skip_offset = 0
-        self.last_label = 0
+        self.pairbuf = PairedBuffer(n_skip)
         self.smoother = HMMSmoother()
+        
+        self.buf = np.zeros((n_win, 1), dtype=dtype)
+
+    def reset(self):
+        self.buf = np.zeros((self.n_win, 1), dtype=self.dtype)
+        self.smoother.reset()
+        self.pairbuf.reset()
 
     def update(self, data):
         n_data = len(data)
 
-        # shift
-        self.buf = np.roll(self.buf, shift=self.n_buf - n_data)
-        self.buf[-n_data:,:] = (data ** 2)
+        # 
+        self.pairbuf.push(data.astype(self.dtype))
 
-        # moving average
-        power = np.zeros(data.shape, dtype='float32')
-        power[0] = np.sum(self.buf[(-n_data-self.n_win):-n_data,:])
-        for i in range(1,n_data):
-            power[i] = power[i-1] - self.buf[-n_data+i-self.n_win-1,:] + self.buf[-n_data+i-1,:]
-        power /= self.n_win
-        
-        #
-        power = power[self.skip_offset::self.n_skip,:]
+        # 
+        while True:
+            chunk = self.pairbuf.get_unlabeled(self.n_skip)
+            if chunk is None:
+                break
 
-        #
-        labels_ = np.zeros(power.shape, dtype='float32')
-        labels_[power >= self.flrpower] = 1        
-        labels_ = self.smoother.update(labels_)
+            # shift buffer for power
+            self.buf = np.roll(self.buf, shift=self.n_win - self.n_skip)
+            self.buf[-self.n_skip:,:] = (chunk ** 2)
 
-        #
-        labels_[labels_ >= self.thre] = 1.0
-        labels_[labels_ < self.thre] = 0.0
+            # average
+            power = np.mean(self.buf[-self.n_win:])
 
-        labels = np.ones(data.shape, dtype='float32') * self.last_label
+            label = 1 if power >= self.flrpower else 0
+            label = self.smoother.update(np.array([label]))
+            
+            self.pairbuf.set_label(
+                np.ones((self.n_skip, 1),
+                        dtype=self.dtype)
+                * label
+            )
 
-        for i in range(n_data - self.skip_offset):
-            labels[self.skip_offset + i] = labels_[int(i/self.n_skip)]
-        q, mod = divmod(n_data - self.skip_offset, self.n_skip)
-        self.skip_offset = (self.n_skip -  mod) % self.n_skip
+        return self.pairbuf.pop(n_data)
 
-        self.last_label = labels[-1]
-
-        return np.concatenate([data, labels], axis=1)
 
 """
 """
-class PostProc(lib.pipeline.Processor):
-    def __init__(self, fs, margin_begin, margin_end, shift_time=0.2):
+class PostProc(pl.Processor):
+    def __init__(self, fs, margin_begin, margin_end,
+                 shift_time=0.2, dtype='float32'):
+        self.dtype = dtype
         self.n_buf = int(fs * (margin_begin + margin_end))
         self.n_margin_begin = int(fs * margin_begin)
         self.n_margin_end = int(fs * margin_end)
         
-        self.buf = np.zeros((self.n_buf, 1), dtype=float)
+        self.buf = np.zeros((self.n_buf, 1), dtype=dtype)
         self.state = 0
         self.prev_lab = 0
 
@@ -115,7 +154,7 @@ class PostProc(lib.pipeline.Processor):
         pass
 
     def reset(self):
-        self.buf = np.zeros((self.n_buf, 1), dtype=float)
+        self.buf = np.zeros((self.n_buf, 1), dtype=self.dtype)
         self.state = 0
         self.prev_lab = 0
         self.total_frames = 0
@@ -134,8 +173,8 @@ class PostProc(lib.pipeline.Processor):
 
         #
         packet_state = _SEG_STATE_NONACTIVE
-        labels = np.zeros((len(data),1), dtype=float)
-        audio = np.zeros((len(data)+self.n_margin_begin, 1), dtype=float)
+        labels = np.zeros((len(data),1), dtype=self.dtype)
+        audio = np.zeros((len(data)+self.n_margin_begin, 1), dtype=self.dtype)
         n_audio = 0
 
         # naive implementation
@@ -164,7 +203,7 @@ class PostProc(lib.pipeline.Processor):
             
             # speech section (actual)
             elif self.state == 1:
-                packet_state = 1
+                packet_state = _SEG_STATE_ACTIVE
                 labels[n] = 1
                 audio[n_audio] = data[n,0]
                 n_audio += 1
