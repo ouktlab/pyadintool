@@ -4,7 +4,8 @@
 import numpy as np
 import logging
 import lib.pipeline as pl
-from lib.io import _SEG_STATE_NONACTIVE, _SEG_STATE_ACTIVE, _SEG_STATE_END
+import lib.io as io
+
 
 '''
 '''
@@ -34,7 +35,8 @@ class PairedBuffer:
 
     def pop(self, n_len):
         if n_len > self.n_labeled:
-            print(f'[ERROR]: required size {n_len} is larger than labeled data size {self.n_labeled}')
+            print(f'[ERROR]: required size, {n_len}, is larger than '
+                  f'the size of labeled data, {self.n_labeled}.')
             quit()
         
         data = self.buf_data[:n_len]
@@ -49,31 +51,30 @@ class PairedBuffer:
 
 '''
 '''
-class HMMSmoother(pl.Processor):
-    def __init__(self, ptrans_self=0.99, dtype='float32'):
+class npBinaryProbFilter(pl.Processor):
+    def __init__(self, ptrans_self=0.99, weight=0.5, dtype='float32'):
         self.dtype = dtype
-        self.prior = np.array([1, 0], dtype=dtype)
+        self.weight = np.array([1 - weight, weight])
         self.trans_prob = np.array([
             [ptrans_self, 1 - ptrans_self],
             [1 - ptrans_self, ptrans_self]
         ], dtype=dtype)
 
+        self.reset()
+
     def reset(self):
-        self.prior = np.array([1, 0], dtype=dtype)
+        self.prior = np.array([1, 0], dtype=self.dtype)
 
-    def update(self, data):
+    def update(self, data, isEOS=False):
         n_data = len(data)
-        labels = np.zeros(data.shape, dtype=self.dtype)
+        
+        labels = np.zeros((n_data,1), dtype=self.dtype)
+        lh = np.stack([1 - data, data], axis=1)
 
-        for t, x in enumerate(data):
-            post = np.matmul(self.trans_prob, self.prior)
-            post[0] *= (1 -x)
-            post[1] *= x
-
-            post = post / np.sum(post)
-            self.prior = post
-
-            labels[t] = post[1]
+        for t in range(n_data):
+            post = np.matmul(self.trans_prob, self.prior) * lh[t,:] / self.weight
+            self.prior = post / np.sum(post)
+            labels[t] = self.prior[1]
 
         return labels
 
@@ -83,36 +84,35 @@ class HMMSmoother(pl.Processor):
 class SimpleVAD(pl.Processor):
     def __init__(self, n_win, flramp=300,
                  n_skip=80, thre=0.5, nbits=16, dtype='float32'):
+        # fixed parameters
         self.dtype = dtype
-        
         self.n_win = n_win
         self.flrpower = ((flramp / (2**(nbits-1)-1))**2)
         self.n_skip = n_skip
         self.thre = thre
 
         self.pairbuf = PairedBuffer(n_skip)
-        self.smoother = HMMSmoother()
-        
-        self.buf = np.zeros((n_win, 1), dtype=dtype)
+        self.smoother = npBinaryProbFilter()
+
+        self.reset()
 
     def reset(self):
         self.buf = np.zeros((self.n_win, 1), dtype=self.dtype)
         self.smoother.reset()
         self.pairbuf.reset()
 
-    def update(self, data):
+    def update(self, data, isEOS):
+        if data is None:
+            return None
+        
         n_data = len(data)
 
         # 
         self.pairbuf.push(data.astype(self.dtype))
 
         # 
-        while True:
-            chunk = self.pairbuf.get_unlabeled(self.n_skip)
-            if chunk is None:
-                break
-
-            # shift buffer for power
+        while (chunk := self.pairbuf.get_unlabeled(self.n_skip)) is not None:
+            # shift buffer for power calculation
             self.buf = np.roll(self.buf, shift=self.n_win - self.n_skip)
             self.buf[-self.n_skip:,:] = (chunk ** 2)
 
@@ -134,124 +134,138 @@ class SimpleVAD(pl.Processor):
 """
 """
 class PostProc(pl.Processor):
-    def __init__(self, fs, margin_begin, margin_end,
-                 shift_time=0.2, dtype='float32'):
+    _STATE_NONACTIVE = 0
+    _STATE_ACTIVE = 1
+    _STATE_MARGIN = 2
+
+    def __init__(self, freq, margin_begin, margin_end,
+                 thre=0.5, shift_time=0.2, dtype='float32'):
         self.dtype = dtype
-        self.n_buf = int(fs * (margin_begin + margin_end))
-        self.n_margin_begin = int(fs * margin_begin)
-        self.n_margin_end = int(fs * margin_end)
-        
-        self.buf = np.zeros((self.n_buf, 1), dtype=dtype)
-        self.state = 0
-        self.prev_lab = 0
 
-        self.fs = fs
-        self.shift_frames = int(shift_time * self.fs)
+        # fixed parameters
+        self.freq = freq
+        self.n_buf = int(freq * (margin_begin + margin_end))
+        self.n_margin_begin = int(freq * margin_begin)
+        self.n_margin_end = int(freq * margin_end)
+        self.thre = thre
+        self.shift_frames = int(shift_time * freq)
 
-        self.total_frames = 0
-        self.time_start = 0
-        self.time_end = 0
-        pass
+        # 
+        self.reset()
 
     def reset(self):
-        self.buf = np.zeros((self.n_buf, 1), dtype=self.dtype)
-        self.state = 0
-        self.prev_lab = 0
+        self.buf = np.zeros((self.n_buf,1), dtype=self.dtype)
+        self.state = self._STATE_NONACTIVE
+        self.plab = 0
         self.total_frames = 0
         self.time_start = 0
         self.time_end = 0
 
-    #  data: [len, ch]
-    def update(self, data):
-        # 
+    def update(self, data, isEOS):
         if data is None:
-            return None
+            return None, None
+
+        n_data = len(data)
+        base_nframe = self.total_frames - self.shift_frames
         
-        # binarize label
-        data[(data[:,1] >= 0.5),1] = 1
-        data[(data[:,1] < 0.5),1] = 0
+        # end of source input
+        if isEOS is True and self.state != self._STATE_NONACTIVE:
+            self.time_end = base_nframe / self.freq
+            logger = logging.getLogger(__name__)
+            logger.info(f'[LOG]: segment: {self.time_start:.3f} {self.time_end:.3f}             ')
+            return None, [{
+                'state':io._SEG_STATE_END, 'audio':None,
+                'start':self.time_start, 'end':self.time_end
+            }]
+
+        # separation
+        oaudio, ilabel = data[:,0], data[:,1]
+
+        # binarization
+        ilabel = np.reshape(
+            np.where(ilabel >= self.thre, 1.0, 0.0),
+            (-1,1)
+        ).astype(np.float32)
+
+        # buffering
+        self.buf = np.append(self.buf, oaudio)
+        self.total_frames += n_data
 
         #
-        packet_state = _SEG_STATE_NONACTIVE
-        labels = np.zeros((len(data),1), dtype=self.dtype)
-        audio = np.zeros((len(data)+self.n_margin_begin, 1), dtype=self.dtype)
-        n_audio = 0
+        olabel = np.copy(ilabel)
+        n_oaudio = 0
+        packets = []
 
-        # naive implementation
-        for n in range(len(data)):
+        #
+                    
+        # very naive implementation (high computational cost)
+        for n, lab in enumerate(ilabel):
             
             # non-speech section
-            if self.state == 0:
-                print('[LOG]: now non-speech section\r', end='')
+            if self.state == self._STATE_NONACTIVE:
+                #print('[LOG]: now non-speech section\r', end='')
+                packet_state = io._SEG_STATE_NONACTIVE
                 
-                # detection of speech frame: move to state 1 (speech)
-                if data[n,1] - self.prev_lab > 0:
-                    self.state = 1
-                    labels[n] = 1
+                # detection of speech frame: move to state ACTIVE (speech)
+                if lab - self.plab > 0:
+                    print('[LOG]: now speech section (actual)\r', end='')
+                    self.state = self._STATE_ACTIVE
                     
-                    audio[0:self.n_margin_begin-n] = self.buf[-(self.n_margin_begin-n):]
-                    n_audio += self.n_margin_begin - n
-
-                    for nn in range(n):
-                        audio[n_audio] = data[nn,0]
-                        n_audio += 1
-                        
-                    packet_state = _SEG_STATE_ACTIVE
-                    self.time_start = (self.total_frames + n - self.n_margin_begin - self.shift_frames) / self.fs
-                    
-                pass
+                    n_oaudio = self.n_margin_begin
+                    oaudio = self.buf[self.n_buf+n-self.n_margin_begin:]
+                    self.time_start = (base_nframe + n - self.n_margin_begin) / self.freq
             
             # speech section (actual)
-            elif self.state == 1:
-                packet_state = _SEG_STATE_ACTIVE
-                labels[n] = 1
-                audio[n_audio] = data[n,0]
-                n_audio += 1
+            if self.state == self._STATE_ACTIVE:
+                #print('[LOG]: now speech section (actual)\r', end='')
+                packet_state = io._SEG_STATE_ACTIVE
                 
-                print('[LOG]: now speech section (actual)\r', end='')
-                # detection of non-speech frame: move to state 2 (margin)
-                if data[n,1] - self.prev_lab < 0:
-                    self.state = 2
+                # detection of non-speech frame: move to state MARGIN (margin)
+                if lab - self.plab < 0:
+                    print('[LOG]: now speech section (margin)\r', end='')
+                    self.state = self._STATE_MARGIN
                     self.cnt_margin_frame = 0
-                pass
+                else:
+                    n_oaudio += 1                
 
             # non-speech section (margin)
-            elif self.state == 2:
-                packet_state = _SEG_STATE_ACTIVE
-                labels[n] = 1
-                audio[n_audio] = data[n,0]
-                n_audio += 1
-                
-                print('[LOG]: now speech section (margin)\r', end='')
+            if self.state == self._STATE_MARGIN:
+                #print('[LOG]: now speech section (margin)\r', end='')
                 self.cnt_margin_frame += 1
+                packet_state = io._SEG_STATE_ACTIVE
 
-                # detection of speech section: move to state 1 (speech)
-                if data[n,1] - self.prev_lab > 0:
-                    self.state = 1
+                olabel[n] = 1
+                n_oaudio += 1
 
-                # end of maring: move to state 0 (non-speech)
-                if self.cnt_margin_frame > self.n_margin_end:
-                    self.state = 0
-                    packet_state = _SEG_STATE_END
-                    self.time_end = (self.total_frames + n - self.shift_frames) / self.fs
+                # detection of speech section: move to state ACTIVE (speech)
+                if lab - self.plab > 0:
+                    print('[LOG]: now speech section (actual)\r', end='')
+                    self.state = self._STATE_ACTIVE
+
+                # end of margin: move to state NONACTIVE (non-speech)
+                if self.cnt_margin_frame >= self.n_margin_end:
+                    self.state = self._STATE_NONACTIVE
+                    self.time_end = (base_nframe + n) / self.freq
 
                     logger = logging.getLogger(__name__)
                     logger.info(f'[LOG]: segment: {self.time_start:.3f} {self.time_end:.3f}             ')
-                    
-                pass
-        
-            self.prev_lab = data[n,1]
-            pass
-        
-        # data shift
-        self.buf = np.roll(self.buf, shift=-len(data))
-        self.buf[-len(data):] = data[:,0:1]
-        self.total_frames += len(data)
 
-        return labels, {
-            'state':packet_state,
-            'audio':audio[:n_audio],
-            'start':self.time_start,
-            'end':self.time_end
-        }
+                    packets.append({
+                        'state':io._SEG_STATE_END, 'audio':oaudio[:n_oaudio],
+                        'start':self.time_start, 'end':self.time_end
+                    })
+                    packet_state = io._SEG_STATE_NONACTIVE
+                    print('[LOG]: now non-speech section\r', end='')
+        
+            self.plab = lab
 
+        # buffer update
+        self.buf = self.buf[-self.n_buf:]
+
+        # remained data packet
+        packets.append({
+            'state':packet_state, 'audio':oaudio[:n_oaudio],
+            'start':self.time_start, 'end':self.time_end
+        })
+
+        return olabel, packets

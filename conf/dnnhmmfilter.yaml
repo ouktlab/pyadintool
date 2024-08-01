@@ -18,7 +18,7 @@ classifier:
     tf_dims: 512
     tf_nhead: 8
     tf_num_layers: 2
-  path: ouktlab/pyadintool-stftvad-SITEVoiceClassifier-v2407
+  path: ouktlab/pyadintool-fdvad-SITEVoiceClassifier-l-avg10-v2408
   
 n_bwd: 50
 n_fwd: 0

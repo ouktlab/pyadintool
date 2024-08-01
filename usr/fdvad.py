@@ -47,17 +47,13 @@ class BinaryProbFilter:
         
     def forward(self, binlabels):
         n_len = len(binlabels)
-        
-        lh = torch.zeros((2,n_len))
-        lh[0,:] = binlabels
-        lh[1,:] = 1.0 - binlabels
+
+        lh = torch.stack([binlabels, 1.0 - binlabels])
         lh = (lh.T / self.weight).T
 
         post = torch.zeros(n_len)
-
         for t in range(n_len):
-            p_trans = torch.mv(self.trans, self.prior)
-            self.prior = p_trans * lh[:,t]
+            self.prior = torch.mv(self.trans, self.prior) * lh[:,t]
             self.prior = self.prior / torch.sum(self.prior)
             post[t] = self.prior[0]
 
@@ -96,7 +92,7 @@ class DNNHMMFilter(torch.nn.Module):
 
 ####
 class BufferedWav2AmpSpec:
-    def __init__(self, n_fwd=0, n_bwd=100, device='cpu', n_fft=512, n_shift=160):
+    def __init__(self, n_fwd=0, n_bwd=50, device='cpu', n_fft=512, n_shift=160):
         self.n_fwd = n_fwd
         self.n_bwd = n_bwd
         self.n_bwdpad = (n_bwd) * n_shift + n_fft
@@ -205,7 +201,7 @@ class BufferedWav2AmpSpec:
 #
 class stftSlidingVAD(lib.pipeline.Processor):
     def __init__(self, yamlfile, min_frame,
-                 nshift=160, nbuffer=12000, device='cpu', nthread=4):
+                 nshift=160, nbuffer=12000, device='cpu', dtype='float16', nthread=4):
 
         with open(yamlfile, 'r') as yml:
             try:
@@ -215,17 +211,12 @@ class stftSlidingVAD(lib.pipeline.Processor):
                 quit()
             
         self.model = DNNHMMFilter(**config)
-        
-        #self.model = HMMFilter.from_pretrained('my-hmm-model')
-        #self.model.from_pretrained('my-hmm-model')
 
-        #
-        #if '.yaml' in yamlfile:
-        #    self.model.load_from_config(yamlfile)
-        #else:
-        #    self.model.from_pretrained(yamlfile)
-
-        # 
+        if dtype == 'float16':
+            self.dtype = torch.float16
+        else:
+            self.dtype = torch.float32
+            
         
         self.wav2aspec = BufferedWav2AmpSpec(self.model.n_fwd, self.model.n_bwd)
         self.model.set_device(device)
@@ -233,13 +224,11 @@ class stftSlidingVAD(lib.pipeline.Processor):
         self.min_frame = min_frame
         self.nshift = nshift
         self.device = device
-
         self.nbuffer = nbuffer
         self.delayed_sample = self.model.n_offset * self.nshift
-        self.delayed_data = torch.zeros(self.nbuffer)
 
-        self.prev_lab = 0
-
+        self.reset()
+        
         torch.set_num_threads(nthread)
 
         pass
@@ -250,7 +239,7 @@ class stftSlidingVAD(lib.pipeline.Processor):
         self.wav2aspec.reset()
         self.delayed_data = torch.zeros(self.nbuffer)
 
-    def update(self, data):
+    def update(self, data, isEOS=False):
 
         if data is not None:
             # 
@@ -264,7 +253,9 @@ class stftSlidingVAD(lib.pipeline.Processor):
             # 
             feats = self.wav2aspec.get(data, self.min_frame)
         else:
-            feats = self.wav2aspec.get(data, 1)            
+            feats = self.wav2aspec.get(data, 1)
+            if feats is None:
+                return None
             n_len = feats.shape[0] * self.nshift
 
         # 
@@ -275,7 +266,7 @@ class stftSlidingVAD(lib.pipeline.Processor):
         if feats is not None:
             with torch.no_grad():
                 self.model.eval()
-                prob_raw, prob_smooth = self.model(feats.to(self.device))
+                prob_raw, prob_smooth = self.model(feats.to(self.dtype).to(self.device))
             
             for i, lab in enumerate(prob_smooth):
                 outputs[i*self.nshift:(i+1)*self.nshift, 1] = lab

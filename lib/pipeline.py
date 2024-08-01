@@ -49,7 +49,7 @@ class Processor(metaclass=ABCMeta):
         pass
 
     @abstractclassmethod
-    def update(self):
+    def update(self, data, isEOS):
         pass
 
 '''
@@ -87,33 +87,30 @@ class Pipeline:
         self.procs.append(proc)
 
     def update(self):
-        data = []
-
         # input
         inputs = self.source.read()
 
         # end of input
-        if inputs is None:
-            for m in self.procs:
-                inputs = m.update(inputs)
-            return None
+        isEOS = True if inputs is None else False
 
         # 
+        data = []
         data.append(inputs)
         
         # proc
         for m in self.procs:
-            inputs = m.update(inputs)
-            if type(inputs) == tuple:
-                data.extend(list(inputs))
-            else:
-                data.append(inputs)
-
+            inputs = m.update(inputs, isEOS)
+            data.extend(list(inputs)) if type(inputs) == tuple else data.append(inputs)
+        
         # output
         if self.sinks is not None:
             for sink, idx in zip(self.sinks, self.indices):
-                sink.write(data[idx])
-
+                if data[idx] is not None:
+                    sink.write(data[idx])
+        
+        if isEOS is True:
+            return None
+                
         return data
 
     # 

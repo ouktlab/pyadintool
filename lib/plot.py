@@ -43,9 +43,10 @@ class RealtimeBufferedPlotWindow:
     def update(self):
         n_total = 0
         while n_total < self.nbuffer:
-            wavs = self.pipeline.update()
+            wavs = None if self.pipeline is None else self.pipeline.update()
         
             if wavs is None:
+                self.pipeline = None
                 self.win.close()
                 return
             

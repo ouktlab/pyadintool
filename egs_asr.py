@@ -1,6 +1,6 @@
 import lib.adinserver
 
-def espnet_main():
+def espnet_main(device):
     ############################
     import numpy as np
     from pathlib import Path
@@ -41,7 +41,7 @@ def espnet_main():
                 if isEOS is True:
                     print(f'[LOG]: end of audio segment')
                     results = model(
-                        speech=np.empty(0, dtype='float16'),
+                        speech=np.empty(0, dtype=np_dtype),
                         is_final=True)                
                     print(f'Result -- {results[0][0]}')
                     print(f'  score: {results[0][3][1].item():.2f},'
@@ -56,11 +56,11 @@ def espnet_main():
         print("[LOG]: end")
 
     ##############################    
-    hfrepo = 'rtakeda/espnet_streaming_csj_test'
+    hfrepo = 'ouktlab/espnet_streaming_csj_asr_train_asr_transformer_lm_rnn'
     
     model = Speech2TextStreamingInterface.from_pretrained(
         hfrepo,
-        device='cpu',
+        device=device,
         token_type='char',
         bpemodel=None,
         maxlenratio=0.0,
@@ -81,7 +81,7 @@ def espnet_main():
     loop(model, adinserver)
     adinserver.join()
 
-def whisper_main():
+def whisper_main(device):
     ##########################
     import numpy as np
     from faster_whisper import WhisperModel
@@ -113,7 +113,7 @@ def whisper_main():
 
     ############################
     model_size = "small"
-    model = WhisperModel(model_size, device="cpu",
+    model = WhisperModel(model_size, device=device,
                          cpu_threads=8, compute_type="int8")
         
     hostname = 'localhost'
@@ -131,6 +131,7 @@ def usage():
     
     parser = argparse.ArgumentParser()
     parser.add_argument('model', type=str, help='"ESPnet" or "Whisper"')
+    parser.add_argument('--device', type=str, help='cpu, cuda', default='cpu')
 
     args = parser.parse_args()
     return args
@@ -139,9 +140,9 @@ def main():
     args = usage()
 
     if args.model == 'ESPnet':
-        espnet_main()
+        espnet_main(args.device)
     elif args.model == 'Whisper':
-        whisper_main()
+        whisper_main(args.device)
     pass
 
 if __name__ == '__main__':

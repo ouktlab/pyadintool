@@ -20,7 +20,7 @@ logfilefmt: _logs/%Y%m%d/log_%Y%m%d%H%M%S.log
 
 enable_rawsave: False
 rawfilefmt: raw/%Y%m%d/record_%u_%R_%H%M%S.wav
-rotate_min: 15
+rotate_min: 30
 
 enable_timestamp: False
 timestampfile: timestamp.lab
@@ -36,10 +36,11 @@ tagger:
   class: stftSlidingVAD
   params:
     yamlfile: conf/dnnhmmfilter.yaml
-    min_frame: 4
+    min_frame: 2
     nshift: 160
     nbuffer: 12000
     device: cpu
+    dtype: float32
     nthread: 2
 
 # post processing
@@ -47,15 +48,14 @@ postproc:
   package: usr.tdvad
   class: PostProc
   params:
-    fs: 16000
+    freq: 16000
     margin_begin: 0.20
-    margin_end: 0.25
-    shift_time: 0.20
+    margin_end: 0.20
+    shift_time: 0.23
 
 #
 plotwin:
   nbuffer: 800
-  #selects: [0, 1, 2] # for debug
   selects: [1, 2]
   nsample: 32000
   nch: 3

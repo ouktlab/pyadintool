@@ -23,22 +23,26 @@ class SileroVAD(pl.Processor):
 
         self.pairbuf = tdvad.PairedBuffer(self.window_size_samples)
 
+    # It is better to reset the internal state of Silero model
+    # for filelist processing
+    def reset(self):
+        pass
+
     '''
     '''
-    def update(self, data):
+    def update(self, data, isEOS):
+        if data is None:
+            return None
+        
         n_data = len(data)
 
         # push to buffer
         self.pairbuf.push(data.astype(self.dtype))
 
         # estimate label
-        while True:
-            chunk = self.pairbuf.get_unlabeled(self.window_size_samples)
-            if chunk is None:
-                break
-
+        while (chunk := self.pairbuf.get_unlabeled(self.window_size_samples)) is not None:
             # 
-            chunk = torch.from_numpy(chunk).clone().squeeze(dim=1)                    
+            chunk = torch.from_numpy(chunk).clone().squeeze(dim=1)
             speech_prob = self.model(chunk, self.freq).item()
 
             #

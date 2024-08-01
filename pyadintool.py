@@ -147,7 +147,7 @@ def setup_source(config):
         source = lib.io.AudioSourceFile(filename,
                                     config['freq'],
                                     config['nch'],
-                                    160, block=False)
+                                        160, block=False)
         logger.info(f'[LOG]: SOURCE: use audio file {filename}')            
 
     return source

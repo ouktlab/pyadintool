@@ -20,7 +20,7 @@ logfilefmt: _logs/%Y%m%d/log_%Y%m%d%H%M%S.log
 
 enable_rawsave: False
 rawfilefmt: raw/%Y%m%d/record_%u_%R_%H%M%S.wav
-rotate_min: 15
+rotate_min: 30
 
 enable_timestamp: False
 timestampfile: timestamp.lab
@@ -43,15 +43,14 @@ postproc:
   package: usr.tdvad
   class: PostProc
   params:
-    fs: 16000
+    freq: 16000
     margin_begin: 0.2
-    margin_end: 0.1
-    shift_time: 0.0
+    margin_end: 0.2
+    shift_time: 0.032
 
 #
 plotwin:
   nbuffer: 800
-  #selects: [0, 1, 2] # for debug
   selects: [1, 2]
   nsample: 32000
   nch: 3

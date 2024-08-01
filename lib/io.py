@@ -174,52 +174,53 @@ class AdinnetSinkSocket(Sink):
     """
     """
     def write(self, data):
-        state = data['state']
+        for packet in data:        
+            state = packet['state']
 
-        # non-active packet
-        if state == _SEG_STATE_NONACTIVE:
-            return
+            # non-active packet
+            if state == _SEG_STATE_NONACTIVE:
+                return
 
-        # 
-        audio = data.get('audio')
-        if audio is not None and state != _SEG_STATE_NONACTIVE:
-            # speech section
-            audio = np.ravel((audio * self.scale).astype('int16'))
-            n_len = len(audio) * 2
+            # 
+            audio = packet.get('audio')
+            if audio is not None and state != _SEG_STATE_NONACTIVE:
+                # speech section
+                audio = np.ravel((audio * self.scale).astype('int16'))
+                n_len = len(audio) * 2
 
-            ##
-            try:
-                bdata = struct.pack('<i', n_len)
-                for adinsock in self.adinsocks:
-                    adinsock.sendall(bdata)
-            except Exception as e:
-                logger = logging.getLogger(__name__)
-                logger.info(f'[LOG]: failed to send the number of bytes of data.')
-                logger.info(f'[LOG]: {e}')
-                quit()
+                ##
+                try:
+                    bdata = struct.pack('<i', n_len)
+                    for adinsock in self.adinsocks:
+                        adinsock.sendall(bdata)
+                except Exception as e:
+                    logger = logging.getLogger(__name__)
+                    logger.info(f'[LOG]: failed to send the number of bytes of data.')
+                    logger.info(f'[LOG]: {e}')
+                    quit()
             
-            ##
-            try:
-                bdata = audio.tobytes()
-                for adinsock in self.adinsocks:
-                    adinsock.sendall(bdata)
-            except Exception as e:
-                logger = logging.getLogger(__name__)
-                logger.info(f'[LOG]: failed to send audio data')
-                logger.info(f'[LOG]: {e}')
-                quit()
+                ##
+                try:
+                    bdata = audio.tobytes()
+                    for adinsock in self.adinsocks:
+                        adinsock.sendall(bdata)
+                except Exception as e:
+                    logger = logging.getLogger(__name__)
+                    logger.info(f'[LOG]: failed to send audio data')
+                    logger.info(f'[LOG]: {e}')
+                    quit()
 
-        # end of segment
-        if state == _SEG_STATE_END:
-            try:
-                eos = struct.pack('<i', 0)
-                for adinsock in self.adinsocks:
-                    adinsock.sendall(eos)
-            except Exception as e:
-                logger = logging.getLogger(__name__)
-                logger.info(f'[LOG]: failed to send "end of segment"')
-                logger.info(f'[LOG]: {e}')
-                quit()
+            # end of segment
+            if state == _SEG_STATE_END:
+                try:
+                    eos = struct.pack('<i', 0)
+                    for adinsock in self.adinsocks:
+                        adinsock.sendall(eos)
+                except Exception as e:
+                    logger = logging.getLogger(__name__)
+                    logger.info(f'[LOG]: failed to send "end of segment"')
+                    logger.info(f'[LOG]: {e}')
+                    quit()
 
         ##
         pass
@@ -271,22 +272,22 @@ class SegmentedAudioSinkFile(Sink):
     """
     """
     def write(self, data):
-        state = data['state']
+        for packet in data:
+            state = packet['state']
 
-        # non-active packet
-        if state == _SEG_STATE_NONACTIVE:
-            return
+            # non-active packet
+            if state == _SEG_STATE_NONACTIVE:
+                return
 
-        audio = data.get('audio')
-        if audio is not None and state != _SEG_STATE_NONACTIVE:
-            if self.stream is None:
-                self.file_open()            
-            audio = data['audio']
-            self.stream.writeframes((audio*self.scale).flatten().astype(self.btype).tobytes())
+            audio = packet.get('audio')
+            if audio is not None and state != _SEG_STATE_NONACTIVE:
+                if self.stream is None:
+                    self.file_open()            
+                self.stream.writeframes((audio*self.scale).flatten().astype(self.btype).tobytes())
 
-        # end of segment
-        if state == _SEG_STATE_END:
-            self.file_close()
+            # end of segment
+            if state == _SEG_STATE_END:
+                self.file_close()
 
         ##
         pass
@@ -384,10 +385,12 @@ class TimestampTextSinkFile(Sink):
     """
     """
     def write(self, data):
-        state = data['state']
-        # end of segment
-        if state == _SEG_STATE_END:
-            print(f"{data['start']:.3f}\t{data['end']:.3f}\tspeech", file=self.stream, flush=True)
+        for packet in data:
+            state = packet['state']
+            # end of segment
+            if state == _SEG_STATE_END:
+                print(f"{packet['start']:.3f}\t{packet['end']:.3f}\tspeech",
+                      file=self.stream, flush=True)
             
         
 try:
