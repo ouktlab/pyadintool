@@ -24,33 +24,40 @@ Real-time processing on CPUs using multi-threading (desirable at least two or th
 
 ## VAD Features ##
 ### Common ###
-* Better SNR, better performance
+* Better SNR (signal-to-noise ratio), better performance
+* Better microphone (stand alone), better performance
+* Near-field recording, better performance
+* Uncompressed audio, better performance
 
 ### Power-based VAD ###
 * Activity estimation based on signal power and its thresholding
-* :smile: fast, light, and works well under high SNR conditions
+* Assumptions
+    * number of speakers: only one (single speaker)
+* :smile: fast and light
 * :frowning_face: unrobust against noise
 
 ### DNN-HMM VAD ###
 * Activity estimation based on machine learning model: HMM and DNN
 * Assumptions
     * number of speakers: only one (single speaker)
-    * language: Japanese may be better (due to the training set)
+    * language: Japanese may be better (due to the model's training set)
 * :smile: scale-invariant processing and multi-conditioned training of model
     * less includenced by the gain setting of audio devices
     * robust against assumed non-speech signals
-* :frowning_face: dependency on training data (general in ML methods)
-    * latter part of long vowels tend not to be detected
+* :frowning_face: performance dependency on model and training data (general in ML methods)
+    * latter part of long vowels tends not to be detected
     * coughs are sometimes detected (not included in training data)
 
 ### [Silero VAD](https://github.com/snakers4/silero-vad) ###
 * Activity estimation based on machine learning model: LSTM
 * :smile: moderately fast and light, and stable performance
+* :frowning_face: performance dependency on model and training data (general in ML methods)
+    * latter part of long vowels tends not to be detected
 
 ## Installation ##
 ### System Requirements ###
 * CPU: multi-core is better
-    * No confirmation with CUDA
+    * No confirmation using CUDA
 * Ubuntu 22.04, Ubuntu 22.04 on Windows WSL
     * :smile: Avairable: Power-based VAD, DNN-HMM VAD, Silero VAD
     * Required libraries
@@ -63,9 +70,10 @@ Real-time processing on CPUs using multi-threading (desirable at least two or th
     * :frowning_face: Unavairable: DNN-HMM VAD (pytorch TransformerEncoderLayer is something wrong on windows?)
     * Latest windows updates
     * Solve problems (fbgemm.dll and its depended libomp140.x86_64.dll) as said in [issues](https://github.com/pytorch/pytorch/issues/131662)
-        * latest Visual C++ x86/64 build tools 
+        * latest Visual C++ x86/64 build tools from Visual Studio [Microsoft](https://visualstudio.microsoft.com/ja/vs/community/)
         * latest Visual C++ redistributable package from [Microsoft](https://learn.microsoft.com/ja-jp/cpp/windows/latest-supported-vc-redist) (for windows 10?)
-* Both: Python3.10 or Python3.11 (Python3.9 if GUI plot is not used) and libraries
+        * (optional) other required modules for torchaudio, etc...
+* Python3.10 or Python3.11 (Python3.9 if GUI plot is not used) and libraries
     * torch
     * torchaudio
     * numpy
@@ -82,7 +90,7 @@ Real-time processing on CPUs using multi-threading (desirable at least two or th
 ### Setup on Ubuntu ###
 <details><summary> expand </summary>
 
-* Copy and edit shell script: change the python version and other options
+* Copy and edit the shell script: change the python version and other options
 ```
 cp setup_ubuntu.sh setup_ubuntu_local.sh
 ```
@@ -94,13 +102,13 @@ enable_whisper=false #true
 python_whisper=python3.10
 ```
 
-* Run the "setup_ubuntu_local.sh" to automatically install the libraries for ubuntu environment. "sudo apt install" and "pip install" commands are used in the script.
-    * Note: we have not specified required Ubuntu libaries. Therefore, some unnecessary libaries may be installed by "apt install". 
+* Run "setup_ubuntu_local.sh" to automatically install necessary libraries for ubuntu environment. "sudo apt install" and "pip install" commands are used in the script.
+    * Note: we have not specified actual required libaries. Therefore, some unnecessary libaries may be installed by "apt install". 
 
 ```
 bash setup_ubuntu_local.sh
 ```
-* The above script also create "venv" environment (venv/main) in the current directory. Activate venv when you run our python scripts.
+* Activate venv when you run our python scripts. The above script create "venv" environment (venv/main) in the current directory.
 ```
   venv/
     + main/    # venv for pyadintool
@@ -128,22 +136,20 @@ setup_win.bat
 
 
 ## Run with default settings ##
-* Activate virtual environment
+* Activate appropriate virtual environment
 ```
 . venv/main/bin/activate   # for ubuntu
 ```
 ```
 .\venv\main\Scripts\activate    # for windows
 ```
-* Pyadintool requires configuration file for execution
+* Pyadintool requires a configuration file for execution
 ```
 python3 pyadintool.py [conf]
 ```
 * Check avairable sound devices (device list) if necessary. 
 ```
 python3 pyadintool.py devinfo
-``` 
-```
 avairable device list---
   0 oss, ALSA (6 in, 6 out)
   1 pulse, ALSA (32 in, 32 out)
@@ -151,7 +157,7 @@ avairable device list---
   3 /dev/dsp, OSS (16 in, 16 out)
 ```
 
-* Use default configuration using DNN-HMM VAD
+* Use the default configuration with DNN-HMM VAD
     * input stream: "mic"
     * output stream: "file" (saved in "result/" directory) 
     * sampling frequency and channel: 16k Hz and 1 
@@ -159,13 +165,12 @@ avairable device list---
 python3 pyadintool.py conf/default4asr.yaml
 ``` 
 
-* Change the audio device by using "--device" option. The device ID must be selected from the device list. 
+* Change the audio device by using "--device" option. The device ID (or name) must be selected from the device list. 
 ```
 python3 pyadintool.py conf/default4asr.yaml --device 2
 ``` 
 
-
-* Switch to power-based VAD or Silero VAD configuration
+* Switch to power-based VAD or Silero VAD configuration if you want
 ```
 python3 pyadintool.py conf/power4asr.yaml
 ``` 
@@ -208,8 +213,8 @@ python3 pyadintool.py conf/default4asr.yaml --out file --filename segs/result_%Y
 ### Example-03: Send segmented audio signals to ASR servers  ###
 <details><summary> expand </summary>
 
-* Run adinnet server (example) before running pyadintool.py. This server receive segmented audio data from pyadintool.py. 
-* ESPnet or Whisper
+* Run "adinnet" server (ASR example) before running "pyadintool.py". This server receives segmented audio data from "pyadintool.py" client. 
+* Set up ESPnet or Whisper
 ```
 . venv/espent/bin/activate
 python3 egs_asr.py ESPnet
@@ -218,7 +223,7 @@ python3 egs_asr.py ESPnet
 . venv/whisper/bin/activate
 python3 egs_asr.py Whisper
 ``` 
-* Julius 
+* or, set up Julius 
 ```
 sudoapt install git-lfs
 git lfsinstall
@@ -233,7 +238,7 @@ python3 pyadintool.py conf/default4asr.yaml --out adinnet
 ```
 python3 pyadintool.py conf/default4asr.yaml --out adinnet --server localhost --port 5530
 ```
-* Send to several ASRs
+* Send data to several ASRs
 ```
 python3 pyadintool.py conf/default4asr.yaml --out adinnet --server localhost,l92.168.1.30 --port 5530,5530
 ```
@@ -258,13 +263,15 @@ python3 pyadintool.py conf/default.yaml --enable_timestamp --timestampfile resul
 ### Example-06: Logging  ###
 <details><summary> expand </summary>
 
+* In the case of long recording, the logging is important to check the behavior of "pyadintool.py"
+    * "buffer overflow" while reading audio from device may happen
 ```
 python3 pyadintool.py conf/default4asr.yaml --enable_logsave
 ```
 ```
 python3 pyadintool.py conf/default4asr.yaml --enable_logsave --logfilefmt log_%Y%m%d.log
 ```
-* Available format
+* Available file format
     * %Y: year
     * %m: month
     * %d: day
@@ -353,6 +360,7 @@ postproc:
 <details><summary> expand </summary>
 
 * Change "flramp" parameter ranged in [0, 32768]. Smaller is more sensitive to signal power
+* Change "n_win" parameter to use long window for calculating moving averaged power  
 ```
   package: usr.tdvad
   class: SimpleVAD
@@ -368,7 +376,7 @@ postproc:
 ### DNN-HMM VAD: threshold parameter
 <details><summary> expand </summary>
 
-* Change "pw_1" parameter in "dnnhmmfilter.yaml". Smaller is more sensitive to speech signal
+* Change "pw_1" parameter in "dnnhmmfilter.yaml". Smaller is more sensitive to speech signal, which is effective under high SNR environments 
 ```
 probfilter:
   classname: BinaryProbFilter

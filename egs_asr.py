@@ -9,7 +9,9 @@ def espnet_main(device):
 
     '''
     Streaming Interface for implementing 'from_pretrained' method 
-    which has not been implemented in ESPnet (pip version).
+    which has not been implemented in ESPnet (pip version). 
+    Note that the original code of 'from_pretrained' is implemented for Speech2Text class in ESPnet. 
+    We used it for Speech2TextStreaming class here. 
     '''
     class Speech2TextStreamingInterface(Speech2TextStreaming):
         def __init__(self, **kwargs):
