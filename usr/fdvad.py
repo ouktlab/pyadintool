@@ -1,22 +1,20 @@
 """
-  VAD in STFT domain
+VAD in STFT domain
 """
-
 import os
 import yaml
 import logging
 import torch
 import numpy as np
-
 from os.path import dirname
 from importlib import import_module
 from huggingface_hub import PyTorchModelHubMixin
-
 import lib.pipeline
 
-"""
-"""
+
 def _load_model(package, classname, params, path=None):
+    """
+    """
     module = import_module(package)
     if path is None:
         model =  getattr(module, classname)(**params)
@@ -32,10 +30,10 @@ def _load_model(package, classname, params, path=None):
     return model
 
 
-'''
-  recursive HMM filtering
-'''
 class BinaryProbFilter:
+    """
+    recursive HMM filtering
+    """
     def __init__(self, trp1_self=0.99, trp2_self=0.99, pw_1=0.5):
         trans = [[trp1_self, 1 - trp1_self],[1 - trp2_self, trp2_self]]
         self.trans = torch.tensor(trans)
@@ -62,9 +60,11 @@ class BinaryProbFilter:
     def reset(self):
         self.prior = torch.tensor([0.0, 1.0])
 
-'''
-'''
+
 class DNNHMMFilter(torch.nn.Module):
+    """
+    DNN-HMM filtering
+    """
     def __init__(self, n_fwd, n_bwd, n_offset, classifier, probfilter):
         super(DNNHMMFilter, self).__init__()
         self.classifier = _load_model(**classifier)
@@ -90,8 +90,9 @@ class DNNHMMFilter(torch.nn.Module):
         return prob, post
 
 
-####
 class BufferedWav2AmpSpec:
+    """
+    """
     def __init__(self, n_fwd=0, n_bwd=50, device='cpu', n_fft=512, n_shift=160):
         self.n_fwd = n_fwd
         self.n_bwd = n_bwd
@@ -126,18 +127,17 @@ class BufferedWav2AmpSpec:
     def noise_append(self):
         self.buf_wav = torch.randn(self.n_fwdpad).reshape(1, self.n_fwdpad) * 1.0e-8
 
-    """
-    wavs: torch.tensor [Ch, Len]
-    """
     def wav_append(self, wavs):
+        """
+        wavs: torch.tensor [Ch, Len]
+        """
         if self.debug:
             print(f'[LOG]: wav_append: input - {wavs.shape}, wavbuf - {self.buf_wav.shape}')
         self.buf_wav = torch.concat([self.buf_wav, wavs], dim=1)
         
-    """
-    
-    """
     def wav2pspec_in_buf_if_possible(self):
+        """
+        """
         [n_ch, n_wav] = self.buf_wav.shape
         
         if self.debug:
@@ -197,9 +197,10 @@ class BufferedWav2AmpSpec:
         self.framesplice_in_buf_if_possible()
         return self.get_feats_if_possible(req_frame)
 
-#####
-#
+
 class stftSlidingVAD(lib.pipeline.Processor):
+    """
+    """
     def __init__(self, yamlfile, min_frame,
                  nshift=160, nbuffer=12000, device='cpu', dtype='float16', nthread=4):
 
@@ -216,8 +217,7 @@ class stftSlidingVAD(lib.pipeline.Processor):
             self.dtype = torch.float16
         else:
             self.dtype = torch.float32
-            
-        
+                
         self.wav2aspec = BufferedWav2AmpSpec(self.model.n_fwd, self.model.n_bwd)
         self.model.set_device(device)
 
@@ -228,10 +228,7 @@ class stftSlidingVAD(lib.pipeline.Processor):
         self.delayed_sample = self.model.n_offset * self.nshift
 
         self.reset()
-        
         torch.set_num_threads(nthread)
-
-        pass
 
     def reset(self):
         self.prev_lab = 0
@@ -240,8 +237,14 @@ class stftSlidingVAD(lib.pipeline.Processor):
         self.delayed_data = torch.zeros(self.nbuffer)
 
     def update(self, data, isEOS=False):
-
+        """
+        """
         if data is not None:
+            if type(data) is not np.ndarray:
+                logger = logging.getLogger(__name__)
+                logger.info(f'[ERROR]: input data type is not [numpy.ndarray], but [{type(data)}]')
+                raise TypeError()
+    
             # 
             data = torch.from_numpy(data).T.clone()
             n_len = len(data.T)

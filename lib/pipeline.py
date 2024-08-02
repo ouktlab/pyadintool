@@ -1,44 +1,55 @@
-from abc import ABCMeta, abstractclassmethod
+from abc import ABCMeta, abstractmethod
 
-"""
-"""
+
 class Source(metaclass=ABCMeta):
-    @abstractclassmethod
+    """
+    read data from an input stream and pass them to subsequent processing
+    """
+    @classmethod
+    @abstractmethod
     def open(self):
         pass
 
-    @abstractclassmethod
+    @classmethod
+    @abstractmethod
     def close(self):
         pass
 
-    '''
-    The size of data for "read" must be defined in each child class.
-    The shape of data may be [Len, Ch] with the numpy darray format 
-    in many cases. 
-    '''
-    @abstractclassmethod
+    @classmethod
+    @abstractmethod
     def read(self):
+        """
+        possible returns
+            numpy.darray: signal data [Len, Ch]
+            list
+        """
         pass
 
-'''
-'''
+
 class Sink(metaclass=ABCMeta):
-    @abstractclassmethod
+    """
+    write data to an output stream
+    """
+    @classmethod
+    @abstractmethod
     def open(self):
         pass
 
-    @abstractclassmethod
+    @classmethod
+    @abstractmethod
     def close(self):
         pass
 
-    @abstractclassmethod
+    @classmethod
+    @abstractmethod
     def write(self, data):
         pass
 
 
-'''
-'''
 class Processor(metaclass=ABCMeta):
+    """
+    data processor from source to sink
+    """
     def open(self):
         pass
 
@@ -46,15 +57,30 @@ class Processor(metaclass=ABCMeta):
         pass
 
     def reset(self):
+        """
+        reset internal state of processor for iterative processing
+        """
         pass
 
-    @abstractclassmethod
+    @classmethod
+    @abstractmethod
     def update(self, data, isEOS):
+        """
+        data: Any
+        isEOS: bool
+            end of stream flag
+
+        return
+        data: Any
+
+        """
         pass
 
-'''
-'''
+
 class Pipeline:
+    """
+    pipeline processor
+    """
     class _True:
         def do(self):
             return True
@@ -93,7 +119,7 @@ class Pipeline:
         # end of input
         isEOS = True if inputs is None else False
 
-        # 
+        #
         data = []
         data.append(inputs)
         

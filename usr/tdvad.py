@@ -7,9 +7,10 @@ import lib.pipeline as pl
 import lib.io as io
 
 
-'''
-'''
 class PairedBuffer:
+    """
+    buffer for paired data and label
+    """
     def __init__(self, n_init, dtype='float32'):
         self.n_init = n_init
         self.dtype = dtype
@@ -49,9 +50,9 @@ class PairedBuffer:
         return np.concatenate([data, label], axis=1)
         
 
-'''
-'''
 class npBinaryProbFilter(pl.Processor):
+    """
+    """
     def __init__(self, ptrans_self=0.99, weight=0.5, dtype='float32'):
         self.dtype = dtype
         self.weight = np.array([1 - weight, weight])
@@ -78,10 +79,11 @@ class npBinaryProbFilter(pl.Processor):
 
         return labels
 
-"""
-  Power-based Simple VAD
-"""
+
 class SimpleVAD(pl.Processor):
+    """
+    Power-based Simple VAD
+    """
     def __init__(self, n_win, flramp=300,
                  n_skip=80, thre=0.5, nbits=16, dtype='float32'):
         # fixed parameters
@@ -105,11 +107,14 @@ class SimpleVAD(pl.Processor):
         if data is None:
             return None
         
+        if type(data) is not np.ndarray:
+            logger = logging.getLogger(__name__)
+            logger.info(f'[ERROR]: input data type is not [numpy.ndarray], but [{type(data)}]')
+            raise TypeError()
+        
         n_data = len(data)
-
         # 
         self.pairbuf.push(data.astype(self.dtype))
-
         # 
         while (chunk := self.pairbuf.get_unlabeled(self.n_skip)) is not None:
             # shift buffer for power calculation
@@ -124,16 +129,15 @@ class SimpleVAD(pl.Processor):
             
             self.pairbuf.set_label(
                 np.ones((self.n_skip, 1),
-                        dtype=self.dtype)
-                * label
+                        dtype=self.dtype) * label
             )
 
         return self.pairbuf.pop(n_data)
 
 
-"""
-"""
 class PostProc(pl.Processor):
+    """
+    """
     _STATE_NONACTIVE = 0
     _STATE_ACTIVE = 1
     _STATE_MARGIN = 2
@@ -162,9 +166,23 @@ class PostProc(pl.Processor):
         self.time_end = 0
 
     def update(self, data, isEOS):
+        """
+        data: np.ndarray
+        isEOS: end-of-source flag
+
+        return
+        olabel: np.ndarray
+            modified label sequence
+        packet: list of dict
+        """
         if data is None:
             return None, None
-
+        
+        if type(data) is not np.ndarray:
+            logger = logging.getLogger(__name__)
+            logger.info(f'[ERROR]: input data type is not [numpy.ndarray], but [{type(data)}]')
+            raise TypeError()
+        
         n_data = len(data)
         base_nframe = self.total_frames - self.shift_frames
         
@@ -196,9 +214,7 @@ class PostProc(pl.Processor):
         n_oaudio = 0
         packets = []
 
-        #
-                    
-        # very naive implementation (high computational cost)
+        # too naive implementation (high computational cost)
         for n, lab in enumerate(ilabel):
             
             # non-speech section

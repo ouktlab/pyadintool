@@ -1,0 +1,10 @@
+[project]
+name = "pyadintool"
+readme = "README.md"
+license = {file = "LICENSE"}
+version = "0.1"
+
+classifiers = [
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+]

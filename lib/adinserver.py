@@ -5,8 +5,16 @@ import struct
 import numpy as np
 import select
 
+
 class AdinnetServer(threading.Thread):
+    """
+    """
     def __init__(self, hostname, port, bin_dtype='int16'):
+        """
+        hostname: str
+        port: int
+        bin_dtype: str
+        """
         super(AdinnetServer, self).__init__()
         self.is_finish = False
         self.sock = None
@@ -34,8 +42,6 @@ class AdinnetServer(threading.Thread):
         if self.sock is not None:
             self.sock.close()
 
-    '''
-    '''
     def check_select(self, d):
         while True:
             r,_,_ = select.select([d], [], [], 1.0)
@@ -44,9 +50,10 @@ class AdinnetServer(threading.Thread):
             if self.is_finish is True:
                 return False
 
-    '''
-    '''
     def receive(self):
+        """
+        receive data from client
+        """
         while self.is_finish is False:
             if self.check_select(self.client) is False:
                 return
@@ -78,7 +85,7 @@ class AdinnetServer(threading.Thread):
             
         pass
 
-    def run(self):        
+    def run(self):
         self.open()
         while self.is_finish is False:
             try:
@@ -91,7 +98,5 @@ class AdinnetServer(threading.Thread):
                 break        
         self.close()
         
-    '''
-    '''
     def get(self, timeout=None):
         return self.q.get(timeout=timeout)

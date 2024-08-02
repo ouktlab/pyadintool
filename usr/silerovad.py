@@ -3,6 +3,7 @@
 """
 import numpy as np
 import torch
+import logging
 from silero_vad import load_silero_vad, read_audio
 
 import lib.pipeline as pl
@@ -34,9 +35,13 @@ class SileroVAD(pl.Processor):
         if data is None:
             return None
         
-        n_data = len(data)
-
+        if type(data) is not np.ndarray:
+            logger = logging.getLogger(__name__)
+            logger.info(f'[ERROR]: input data type is not [numpy.ndarray], but [{type(data)}]')
+            raise TypeError()
+        
         # push to buffer
+        n_data = len(data)
         self.pairbuf.push(data.astype(self.dtype))
 
         # estimate label
@@ -50,8 +55,7 @@ class SileroVAD(pl.Processor):
 
             self.pairbuf.set_label(
                 np.ones((self.window_size_samples,1),
-                        dtype=self.dtype)
-                * speech_prob
+                        dtype=self.dtype) * speech_prob
             )
 
         # pop labeled paired data

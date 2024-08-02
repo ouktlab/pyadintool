@@ -2,17 +2,18 @@ import numpy as np
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore
 
+
 class RealtimeBufferedPlotWindow:
-    """
-      pipline: processor
-      nbuffer: buffering time for plot (refresh if new data are buffered for nbuffer samples)
-      selects: select data for plot
-      nskip: decimate data for plot      
-    """
     def __init__(self, pipeline, nbuffer,
                  selects=[0],
                  nsample=16000*2,
                  nch=1, nskip=1, scale=1.0):
+        """
+        pipline: processor
+        nbuffer: buffering time for plot (refresh if new data are buffered for nbuffer samples)
+        selects: list of index to select data for plot
+        nskip: decimate data for plot      
+        """
         # main processor
         self.pipeline = pipeline
         self.nsample = nsample

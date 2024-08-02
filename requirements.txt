@@ -1,3 +1,4 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
 certifi==2024.7.4
 cffi==1.16.0
 charset-normalizer==3.3.2

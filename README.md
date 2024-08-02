@@ -2,6 +2,8 @@
 
 Pyadintool is a pre-processing toolkit covering voice activity detection, recording, splitting and sending of audio stream. 
 This toolkit has been developed as a simple python clone of [adintool](https://github.com/julius-speech/julius/blob/master/adintool/README.md) in [Julius](https://github.com/julius-speech/julius) Japanese ASR. 
+This toolkit is developed mainly for academic research (easy to use) and example use. 
+Note that coding standars, error handling, comments and so on in this toolkit are not suitable for joint development. 
 
 ## Key Features ##
 ### Interface ###
@@ -41,6 +43,7 @@ Real-time processing on CPUs using multi-threading (desirable at least two or th
 * Assumptions
     * number of speakers: only one (single speaker)
     * language: Japanese may be better (due to the model's training set)
+    * acceptable latency: 0.2 sec. 
 * :smile: scale-invariant processing and multi-conditioned training of model
     * less includenced by the gain setting of audio devices
     * robust against assumed non-speech signals
@@ -73,7 +76,7 @@ Real-time processing on CPUs using multi-threading (desirable at least two or th
         * latest Visual C++ x86/64 build tools from Visual Studio [Microsoft](https://visualstudio.microsoft.com/ja/vs/community/)
         * latest Visual C++ redistributable package from [Microsoft](https://learn.microsoft.com/ja-jp/cpp/windows/latest-supported-vc-redist) (for windows 10?)
         * (optional) other required modules for torchaudio, etc...
-* Python3.10 or Python3.11 (Python3.9 if GUI plot is not used) and libraries
+* Python3.10 or Python3.11 (Python3.9 if GUI plot is not used) and main libraries. See "requirements.txt" for details.
     * torch
     * torchaudio
     * numpy
@@ -82,7 +85,7 @@ Real-time processing on CPUs using multi-threading (desirable at least two or th
     * huggingface_hub
     * savetensors
     * pyqtgraph (for real-time plot)
-    * PySide6 (for real-time plot)
+    * PySide6 (for real-time plot)    
 * ASR examples
     * ESPnet (on Ubuntu): Python3.10 (Python3.11 may cause error in sentencepiece)
     * Faster Whisper (on Ubuntu): Python3.10, Python3.11
@@ -115,7 +118,14 @@ bash setup_ubuntu_local.sh
     + espnet/  # venv for ESPnet ASR (valid if enable_espent=true)
     + whisper/ # venv for Whisper ASR (valid if enable_whisper=true)
 ```
+
+* Libraries can be also installed by using "requirements.txt" (exact versions in our environment)
+```
+pip3 install -r requirements.txt
+```
+
 </details>
+
 
 ### Setup on Windows ###
 
@@ -150,7 +160,7 @@ python3 pyadintool.py [conf]
 * Check avairable sound devices (device list) if necessary. 
 ```
 python3 pyadintool.py devinfo
-avairable device list---
+--- avairable device list ---
   0 oss, ALSA (6 in, 6 out)
   1 pulse, ALSA (32 in, 32 out)
 * 2 default, ALSA (32 in, 32 out)
@@ -225,7 +235,7 @@ python3 egs_asr.py Whisper
 ``` 
 * or, set up Julius 
 ```
-sudoapt install git-lfs
+sudo apt install git-lfs
 git lfsinstall
 git clone https://github.com/julius-speech/dictation-kit
 cd dictation-kit
@@ -247,6 +257,7 @@ python3 pyadintool.py conf/default4asr.yaml --out adinnet --server localhost,l92
 ### Example-04: Set multiple output streams ###
 <details><summary> expand </summary>
 
+Just include several options in a string, such as "adinnet" and "file". 
 ```
 python3 pyadintool.py conf/default.yaml --out adinnet-file
 ```
@@ -264,7 +275,7 @@ python3 pyadintool.py conf/default.yaml --enable_timestamp --timestampfile resul
 <details><summary> expand </summary>
 
 * In the case of long recording, the logging is important to check the behavior of "pyadintool.py"
-    * "buffer overflow" while reading audio from device may happen
+    * e.g. "buffer overflow" may happen while reading audio signal from device
 ```
 python3 pyadintool.py conf/default4asr.yaml --enable_logsave
 ```
@@ -321,11 +332,16 @@ python3 pyadintool.py conf/default4asr.yaml --enable_plot
 ### Example-10: Save raw recording to files
 <details><summary> expand </summary>
 
+Output file will be automatically rotated after "rotate_min". 
 ```
 python3 pyadintool.py conf/default4asr.yaml --enable_rawsave
 ```
+"%R" should be used in the fileformat options to avoid overwriting. 
 ```
 python3 pyadintool.py conf/default4asr.yaml --enable_rawsave --rawfilefmt raw/%Y%m%d/record_%u_%R_%H%M%S.wav
+```
+```
+python3 pyadintool.py conf/default4asr.yaml --enable_rawsave --rawfilefmt raw/%Y%m%d/record_%u_%R_%H%M%S.wav --rotate_min 30
 ```
 </details>
 
@@ -340,10 +356,11 @@ Some parameters should be set through yaml configuration files such as "default4
 * We also need to change several parameters because they are described in "sample" unit
 </details>
 
-### Common: margin parameter ###
+### Common: margin parameters for audio segmentation ###
 <details><summary> expand </summary>
 
 * Change "magin_begin" and "margin_end" parameters. Their unit is "second".
+* These default configurations are different among methods. 
 ```
 postproc:
   package: usr.tdvad
@@ -387,6 +404,21 @@ probfilter:
     pw_1: 0.5
 ```
 </details>
+
+### Silero VAD: threshold parameter
+<details><summary> expand </summary>
+
+* Change "thre" parameter. Smaller is more sensitive to signal power
+```
+tagger:
+  package: usr.silerovad
+  class: SileroVAD
+  params:
+    freq: 16000
+    thre: 0.5
+```
+</details>
+
 
 ## Options ##
 All default parameters need to be set in the configuration file. The command line options will overwrite the default configurations.
@@ -471,5 +503,3 @@ All default parameters need to be set in the configuration file. The command lin
 
 
 </details>
-
-## Citations ##

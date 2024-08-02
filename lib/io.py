@@ -8,13 +8,12 @@ import wave
 import time
 import queue
 import logging
-
 from lib.pipeline import Source, Sink
 
 
-"""
-"""
 def path_embed_tag(path, rotateid=None):
+    """
+    """
     now = datetime.datetime.now()
     if '%Y' in path:
         path = path.replace('%Y', now.strftime('%Y'))
@@ -43,9 +42,12 @@ def path_embed_tag(path, rotateid=None):
 
     return path
 
-'''
-'''
+
 def setup_logger(enable_logsave, logfilefmt):
+    """
+    enable_logsave: bool
+    logfilefmt: str
+    """
     import os
     import sys
     from datetime import datetime
@@ -83,11 +85,9 @@ def setup_logger(enable_logsave, logfilefmt):
     logging.basicConfig(level=NOTSET, handlers=handlers)
 
 
-"""
-a microphone input signal must be set in the first channel of audio file.
-a loopback (reference) signal must be set in the second channel of audio file.
-"""
 class AudioSourceFile(Source):
+    """
+    """
     def __init__(self, filename, fs, nch, nframe, block=True):
         self.filename = filename
         self.fs = fs
@@ -140,10 +140,15 @@ _SEG_STATE_NONACTIVE = 0
 _SEG_STATE_ACTIVE = 1
 _SEG_STATE_END = 2
 
-"""
-"""
+
 class AdinnetSinkSocket(Sink):
+    """
+    """
     def __init__(self, IPs, PORTs):
+        """
+        IPs: str
+        PORTs: str
+        """
         self.IPs = str(IPs).split(',')
         self.PORTs = [int(x) for x in str(PORTs).split(',')]
         self.adinsocks = []
@@ -171,9 +176,15 @@ class AdinnetSinkSocket(Sink):
         self.adinsocks = []
         pass
 
-    """
-    """
     def write(self, data):
+        """
+        data: list of dict
+        """
+        if type(data) is not list:
+            logger = logging.getLogger(__name__)
+            logger.info(f'[ERROR]: input data type is not [list], but [{type(data)}]')
+            raise TypeError()
+        
         for packet in data:        
             state = packet['state']
 
@@ -227,7 +238,18 @@ class AdinnetSinkSocket(Sink):
 
 
 class SegmentedAudioSinkFile(Sink):
+    """
+    """
     def __init__(self, filename, startid, freq=16000, nch=1, btype='int16'):
+        """
+        filename: str
+            file format
+        startid: int
+            initial rotation id
+        freq: int
+        nch: int
+        btype: str
+        """
         self.filename = filename
         self.fileid = startid
         self.state = _SEG_STATE_NONACTIVE
@@ -240,6 +262,9 @@ class SegmentedAudioSinkFile(Sink):
         if btype == 'int16':
             self.bwidth = 2
             self.scale = 32767
+        elif btype == 'int32':
+            self.bwidth = 4
+            self.scale = 2**31-1
             
         pass
 
@@ -269,9 +294,15 @@ class SegmentedAudioSinkFile(Sink):
         self.stream.close()
         self.stream = None
 
-    """
-    """
     def write(self, data):
+        """
+        data: list of dict
+        """
+        if type(data) is not list:            
+            logger = logging.getLogger(__name__)
+            logger.info(f'[ERROR]: input data type is not [list], but [{data.type}].')
+            raise TypeError()
+
         for packet in data:
             state = packet['state']
 
@@ -282,18 +313,25 @@ class SegmentedAudioSinkFile(Sink):
             audio = packet.get('audio')
             if audio is not None and state != _SEG_STATE_NONACTIVE:
                 if self.stream is None:
-                    self.file_open()            
+                    self.file_open()
                 self.stream.writeframes((audio*self.scale).flatten().astype(self.btype).tobytes())
 
             # end of segment
             if state == _SEG_STATE_END:
                 self.file_close()
 
-        ##
-        pass
 
 class AudioSinkFileRotate(Sink):
+    """
+    """
     def __init__(self, filenamefmt, rotate_min, fs, nch, btype='int16'):
+        """
+        filenamefmt: str
+        rotate_min: int
+        fs: int
+        nch: int
+        btype
+        """
         self.filenamefmt = filenamefmt
         self.rotate_min = rotate_min
         self.fs = fs
@@ -337,8 +375,16 @@ class AudioSinkFileRotate(Sink):
         self.stream.close()
         pass
 
-
     def write(self, data):
+        """
+        data: numpy.darray
+            assumption: 2-dim array with the size of [Len, Ch]
+        """
+        if type(data) is not np.ndarray:
+            logger = logging.getLogger(__name__)
+            logger.info(f'[ERROR]: input data type is not [numpy.ndarray], buf [{type(data)}].')
+            raise TypeError()
+
         n_remained_frame = int((self.maxsize_per_file - self.current_size) / (self.bwidth * self.nch))
 
         if len(data) >= n_remained_frame:
@@ -365,9 +411,10 @@ class AudioSinkFileRotate(Sink):
         self.total_size += data.size * self.bwidth
         self.current_size += data.size * self.bwidth
 
-"""
-"""
+
 class TimestampTextSinkFile(Sink):
+    """
+    """
     def __init__(self, filename):
         self.filename = filename
         self.stream = None
@@ -382,9 +429,15 @@ class TimestampTextSinkFile(Sink):
         self.stream.close()
         pass
 
-    """
-    """
     def write(self, data):
+        """
+        data: list of dict
+        """
+        if type(data) is not list:
+            logger = logging.getLogger(__name__)
+            logger.info(f'[ERROR]: input data type is not [list], buf [{type(data)}].')
+            raise TypeError()
+        
         for packet in data:
             state = packet['state']
             # end of segment
@@ -397,6 +450,8 @@ try:
     import sounddevice as sd
 
     class SoundDeviceSource(Source):
+        """
+        """
         def query_device():
             return sd.query_devices()
 

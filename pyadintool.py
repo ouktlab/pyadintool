@@ -3,10 +3,15 @@ import lib.pipeline
 import re
 import numpy as np
 import logging
-    
+
+
 def usage():
+    """
+    return
+        args: argparse.Namespece
+    """
     import argparse
-    
+
     # argument analysis
     parser = argparse.ArgumentParser()
 
@@ -14,44 +19,43 @@ def usage():
     parser.add_argument('config', type=str)
 
     ###
-    # optional
+    #  optional
     ##
-    # io
-    parser.add_argument('--in', type=str, #default='mic',
+    #  io
+    parser.add_argument('--in', type=str,
                         help='mic | file | adinnet')
-    parser.add_argument('--out', type=str, #default='adinnet',
+    parser.add_argument('--out', type=str,
                         help='file | adinnet')
-    parser.add_argument('--filename', type=str, #default='result',
+    parser.add_argument('--filename', type=str,
                         help='output filename')
-    parser.add_argument('--startid', type=int, #default=0,
+    parser.add_argument('--startid', type=int,
                         help='start number for filename')
-    parser.add_argument('--server', type=str, #default='localhost',
+    parser.add_argument('--server', type=str,
                         help='hostname of adin-server')
-    parser.add_argument('--port', type=int, #default=5530,
+    parser.add_argument('--port', type=int,
                         help='port number of adin-server')
 
-    # 
+    #
     parser.add_argument('--freq', type=int,
                         help='sampling frequency of input device in Hz')
     parser.add_argument('--nch', type=int,
                         help='the number of channels of input device')
 
-    #
-    #parser.add_argument('--nosegment', action='store_const', const=True)
-    #parser.add_argument('--oneshot', action='store_const', const=True)
+    # parser.add_argument('--nosegment', action='store_const', const=True)
+    # parser.add_argument('--oneshot', action='store_const', const=True)
 
     #
     parser.add_argument('--device', help='audio device id or name')
-    
+
     #
     parser.add_argument('--infile', type=str,
                         help='input audio filename')
-    
+
     parser.add_argument('--enable_logsave', action='store_const',
                         const=True, help='save log file')
     parser.add_argument('--logfilefmt', type=str,
                         help='log file format')
-    
+
     #
     parser.add_argument('--enable_rawsave',
                         action='store_const', const=True,
@@ -70,7 +74,7 @@ def usage():
     parser.add_argument('--enable_plot', action='store_const', const=True,
                         help='plot waveform and speech activations')
 
-    ### 
+    #
     parser.add_argument('--enable_list',
                         action='store_const', const=True,
                         help='run batch processing')
@@ -78,16 +82,16 @@ def usage():
                         help='input audiofile list for batch processing')
     parser.add_argument('--tslist', type=str,
                         help='output labelfile list for batch processing')
-    
-    
-    ###
+    #
     args = parser.parse_args()
 
     return args
 
-'''
-'''
+
 def setup_config(args):
+    """
+    args: argparse.Namespece
+    """
     # load default config
     import yaml
     with open(args.config, 'r') as yml:
@@ -100,29 +104,32 @@ def setup_config(args):
 
     return config
 
-'''
-'''
+
 def check_device(args):
     devicelist = lib.io.SoundDeviceSource.query_device()
-    print('avairable device list---')
+    """
+    args: argparse.Namespece
+    """
+    print('--- avairable device list ---')
     print(devicelist)
 
 
-'''
-'''
 def setup_source(config):
+    """
+    config: dict
+    """
     logger = logging.getLogger(__name__)
-    
+
     # microphone input
     if config['in'] == 'mic':
         devlist = lib.io.SoundDeviceSource.query_device()
-        devname2id = {x['name']:i for i, x in enumerate(devlist)}
+        devname2id = {x['name']: i for i, x in enumerate(devlist)}
         devid2name = [x['name'] for i, x in enumerate(devlist)]
 
         device = config['device']
         if re.fullmatch(r'[0-9]+', device):
             deviceid = int(device)
-            logger.info(f'[LOG]: SOURCE: use device {deviceid}:{devid2name[deviceid]}')   
+            logger.info(f'[LOG]: SOURCE: use device {deviceid}:{devid2name[deviceid]}')
         else:
             deviceid = devname2id.get(config['device'])
             if deviceid is None:
@@ -134,27 +141,29 @@ def setup_source(config):
                     logger.info(f'[ERROR]: no such deviceid {deviceid}:{devid2name[deviceid]}.')
                     quit()
 
-        logger.info(f'[LOG]: SOURCE: use device {deviceid}:{devid2name[deviceid]}')   
+        logger.info(f'[LOG]: SOURCE: use device {deviceid}:{devid2name[deviceid]}')
         source = lib.io.SoundDeviceSource(deviceid, config['freq'], config['nch'])
 
     # audio file input
     if config['in'] == 'file':
         filename = config.get('infile')
-        if filename is None: 
+        if filename is None:
             print('type filename: ', end='')
             filename = input().strip()
-        
+
         source = lib.io.AudioSourceFile(filename,
-                                    config['freq'],
-                                    config['nch'],
+                                        config['freq'],
+                                        config['nch'],
                                         160, block=False)
-        logger.info(f'[LOG]: SOURCE: use audio file {filename}')            
+        logger.info(f'[LOG]: SOURCE: use audio file {filename}')
 
     return source
 
-'''
-'''
+
 def setup_sink(config):
+    """
+    config: dict
+    """
     logger = logging.getLogger(__name__)
     sinks = []
     indices = []
@@ -164,7 +173,7 @@ def setup_sink(config):
         sinks.append(sink)
         indices.append(-1)
         logger.info(f'[LOG]: SINK: set out as "adinnet" {config["server"]} {config["port"]}')
-    
+
     if 'file' in config['out']:
         filename = config.get('filename')
         if filename is None:
@@ -194,9 +203,11 @@ def setup_sink(config):
 
     return sinks, indices
 
-'''
-'''
+
 def setup_tagger(config):
+    """
+    config: dict
+    """
     logger = logging.getLogger(__name__)
     
     import importlib
@@ -208,9 +219,11 @@ def setup_tagger(config):
 
     return tagger
 
-'''
-'''
+
 def setup_postproc(config):
+    """
+    config: dict
+    """
     logger = logging.getLogger(__name__)
     
     import importlib
@@ -222,9 +235,12 @@ def setup_postproc(config):
     
     return postproc
 
-'''
-'''
+
 def setup_plotwin(config, pipeline):
+    """
+    config: dict
+    pipeline: class
+    """
     logger = logging.getLogger(__name__)
 
     import lib.plot as plot
@@ -232,9 +248,11 @@ def setup_plotwin(config, pipeline):
 
     return plotwin
 
-"""
-"""
+
 def run_realtime(config):
+    """
+    config: dict
+    """
     logger = logging.getLogger(__name__)
     logger.info(f'[LOG]: setup pipelines')
     
@@ -250,8 +268,8 @@ def run_realtime(config):
     postproc = setup_postproc(config['postproc'])
     if postproc is not None:
         pipeline.add(postproc)
-
-    # 
+    
+    #
     if config['enable_plot'] is True:
         plotwin = setup_plotwin(config, pipeline)
         pipeline.open()
@@ -266,13 +284,15 @@ def run_realtime(config):
     logger.info(f'[LOG]: end processing')
     pipeline.close()
 
-"""
-"""
+
 def run_proclist(config):
+    """
+    config: dict
+    """
     logger = logging.getLogger(__name__)
     logger.info(f'[LOG]: setup pipelines')
 
-    # 
+    #
     infilelist = config.get('inlist')
     tsfilelist = config.get('tslist')
 
@@ -290,7 +310,7 @@ def run_proclist(config):
     config['out'] = '---'
     config['enable_timestamp'] = True
 
-    # 
+    #
     with open(infilelist) as inlist, open(tsfilelist) as tslist:
         for infile, tsfile in zip(inlist, tslist):
             infile = infile.strip()
@@ -315,20 +335,17 @@ def run_proclist(config):
             logger.info(f'[LOG]: end processing')
             pipeline.close()
 
-            ## reset state of processors
+            # reset state of processors
             tagger.reset()
             if postproc is not None:
                 postproc.reset()
-                         
 
     logger.info(f'[LOG]: end of processing')
 
 
-
-
-"""
-"""
 def main():
+    """
+    """
     args = usage()
 
     #####################
@@ -348,17 +365,15 @@ def main():
     logger.info(f'[LOG]: {config}')
     
     #####################
-    # 
-    #####################    
+    #
+    #####################
     if config.get('enable_list') is not None:
         run_proclist(config)
     else:
-        run_realtime(config)        
+        run_realtime(config)
 
     pass
 
-"""
 
-"""    
-if __name__=="__main__":
+if __name__ == "__main__":
     main()
