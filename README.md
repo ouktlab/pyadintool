@@ -30,6 +30,10 @@ Real-time processing on CPUs using multi-threading (desirable at least two or th
 * Better microphone (stand alone), better performance
 * Near-field recording, better performance
 * Uncompressed audio, better performance
+* Performance may be affected by other settings
+    * sampling frequency
+    * amplitude characteristics of low-pass filter used for band limitation
+    * source separation, speech ehnancement, noise reduction and echo cancellation methods 
 
 ### Power-based VAD ###
 * Activity estimation based on signal power and its thresholding
@@ -87,12 +91,14 @@ Real-time processing on CPUs using multi-threading (desirable at least two or th
     * pyqtgraph (for real-time plot)
     * PySide6 (for real-time plot)    
 * ASR examples
-    * ESPnet (on Ubuntu): Python3.10 (Python3.11 may cause error in sentencepiece)
+    * ESPnet (on Ubuntu): Python3.10
+        * Python3.11 may cause error in installing "sentencepiece"
     * Faster Whisper (on Ubuntu): Python3.10, Python3.11
 
 ### Setup on Ubuntu ###
 <details><summary> expand </summary>
 
+#### Shell script ####
 * Copy and edit the shell script: change the python version and other options
 ```
 cp setup_ubuntu.sh setup_ubuntu_local.sh
@@ -119,9 +125,19 @@ bash setup_ubuntu_local.sh
     + whisper/ # venv for Whisper ASR (valid if enable_whisper=true)
 ```
 
-* Libraries can be also installed by using "requirements.txt" (exact versions in our environment)
+#### pip command for python libraries ####
+* Appropriate python version and virtual environment are assumed
+* Python libraries can be also installed by using "requirements.txt" for "pyadintool" (exact versions in our environment)
 ```
 pip3 install -r requirements.txt
+```
+
+* (Optional) ESPnet and Faster Whisper can be installed simply by
+```
+pip3 install espnet torchaudio espnet_model_zoo
+```
+```
+pip3 install faster_whisper
 ```
 
 </details>
@@ -345,6 +361,16 @@ python3 pyadintool.py conf/default4asr.yaml --enable_rawsave --rawfilefmt raw/%Y
 ```
 </details>
 
+
+### Example-11: Set up for real-time ASR applications using adinnet
+<details><summary> expand </summary>
+
+It is better to create a new configuration file for this purpose. 
+```
+python3 pyadintool.py conf/default4asr.yaml --in mic --out file-adinnet --enable_logsave --enable_rawsave --server localhost --port 5530
+```
+</details>
+
 ## Tuning/Change Configuration ##
 Some parameters should be set through yaml configuration files such as "default4asr.yaml", "power4asr.yaml" and "silero4asr.yaml".
 
@@ -360,6 +386,8 @@ Some parameters should be set through yaml configuration files such as "default4
 <details><summary> expand </summary>
 
 * Change "magin_begin" and "margin_end" parameters. Their unit is "second".
+* "shift_time" represents a buffering time (inevitable latency) of each method
+    * the detected times of each segment are modified by this parameter in order to set the internal time to actual time. 
 * These default configurations are different among methods. 
 ```
 postproc:
@@ -377,7 +405,7 @@ postproc:
 <details><summary> expand </summary>
 
 * Change "flramp" parameter ranged in [0, 32768]. Smaller is more sensitive to signal power
-* Change "n_win" parameter to use long window for calculating moving averaged power  
+* Change "n_win" parameter to use longer window for calculation of moving averaged power
 ```
   package: usr.tdvad
   class: SimpleVAD
@@ -393,7 +421,8 @@ postproc:
 ### DNN-HMM VAD: threshold parameter
 <details><summary> expand </summary>
 
-* Change "pw_1" parameter in "dnnhmmfilter.yaml". Smaller is more sensitive to speech signal, which is effective under high SNR environments 
+* Change "pw_1" parameter in "dnnhmmfilter.yaml". Smaller is more sensitive to speech signal.
+* The value "0.1" or smaller may be effective under high SNR environments. 
 ```
 probfilter:
   classname: BinaryProbFilter
