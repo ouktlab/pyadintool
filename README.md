@@ -173,10 +173,10 @@ setup_win.bat
 ```
 python3 pyadintool.py [conf]
 ```
-* Check avairable sound devices (device list) if necessary. 
+* Check available sound devices (device list) if necessary. 
 ```
 python3 pyadintool.py devinfo
---- avairable device list ---
+--- available device list ---
   0 oss, ALSA (6 in, 6 out)
   1 pulse, ALSA (32 in, 32 out)
 * 2 default, ALSA (32 in, 32 out)
@@ -489,32 +489,32 @@ All default parameters need to be set in the configuration file. The command lin
 
 ### --infile [INFILE] ###
 * Set input audio filename if "--in file" is valid
-* Avairable only if "--in file" option is set
+* Available only if "--in file" option is set
 
 ### --enable_logsave ###
 * Save log to the file
 
 ### --logfilefmt [LOGFILEFMT] ###
 * Set fileformat for log
-* Avairable only if "--enable_logsave" option is set
+* Available only if "--enable_logsave" option is set
 
 ### --enable_rawsave ###
 * Save raw input stream to the file
 
 ### --rawfilefmt [LOGFILEFMT] ###
 * Set fileformat for raw audio data, e.g., "rawfile_%Y%d%m_%R.wav"
-* Avairable only if "--enable_rawsave" option is set
+* Available only if "--enable_rawsave" option is set
 
 ### --rotate_min [ROTATE_MIN] ###
 * Set duration time in minutes for saving raw audio files, e.g., 30
-* Avairable only if "--enable_rawsave" option is set
+* Available only if "--enable_rawsave" option is set
 
 ### --enable_timestamp ###
 * Save timestamp of audio segments to the file
 
 ### --timestampfile [TIMESTAMPFILE] ###
 * Set filename for saving timestamps
-* Avairable only if "--enable_timestamp" option is set
+* Available only if "--enable_timestamp" option is set
 
 ### --enable_plot ###
 * Plot waveform and speech activity on GUI
@@ -524,11 +524,11 @@ All default parameters need to be set in the configuration file. The command lin
 
 ### --inlist [INLIST] ###
 * Set audio file list for batch processing
-* Avairable only if "--enable_list" option is set
+* Available only if "--enable_list" option is set
 
 ### --tslist [TSLIST] ###
 * Set timestamp file list for batch processing
-* Avairable only if "--enable_list" option is set
+* Available only if "--enable_list" option is set
 
 
 </details>
