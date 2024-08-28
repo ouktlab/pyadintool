@@ -66,15 +66,15 @@ Real-time processing on CPUs using multi-threading (desirable at least two or th
 * CPU: multi-core is better
     * No confirmation using CUDA
 * Ubuntu 22.04, Ubuntu 22.04 on Windows WSL
-    * :smile: Avairable: Power-based VAD, DNN-HMM VAD, Silero VAD
+    * :smile: Available: Power-based VAD, DNN-HMM VAD, Silero VAD
     * Required libraries
         * alsa-utils
         * libasound2-dev
         * libportaudio2
         * ..., and other GUI and audio libraries
 * Windows 11 (basically not supported)
-    * :smile: Avairable: Power-based VAD, Silero VAD
-    * :frowning_face: Unavairable: DNN-HMM VAD (pytorch TransformerEncoderLayer is something wrong on windows?)
+    * :smile: Available: Power-based VAD, Silero VAD
+    * :frowning_face: Unavailable: DNN-HMM VAD (pytorch TransformerEncoderLayer is something wrong on windows?)
     * Latest windows updates
     * Solve problems (fbgemm.dll and its depended libomp140.x86_64.dll) as said in [issues](https://github.com/pytorch/pytorch/issues/131662)
         * latest Visual C++ x86/64 build tools from Visual Studio [Microsoft](https://visualstudio.microsoft.com/ja/vs/community/)
