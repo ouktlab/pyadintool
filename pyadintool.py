@@ -35,6 +35,8 @@ def usage():
     parser.add_argument('--port', type=int,
                         help='port number of adin-server')
 
+    parser.add_argument('--tgt_chs', type=int, nargs="*", default=[0], help='selected channel list for audio source')
+
     #
     parser.add_argument('--freq', type=int,
                         help='sampling frequency of input device in Hz')
@@ -142,7 +144,7 @@ def setup_source(config):
                     quit()
 
         logger.info(f'[LOG]: SOURCE: use device {deviceid}:{devid2name[deviceid]}')
-        source = lib.io.SoundDeviceSource(deviceid, config['freq'], config['nch'])
+        source = lib.io.SoundDeviceSource(deviceid, config['freq'], config['nch'], tgt_chs=config['tgt_chs'])
 
     # audio file input
     if config['in'] == 'file':
@@ -154,7 +156,8 @@ def setup_source(config):
         source = lib.io.AudioSourceFile(filename,
                                         config['freq'],
                                         config['nch'],
-                                        160, block=False)
+                                        160, tgt_chs=config['tgt_chs'],
+                                        block=False)
         logger.info(f'[LOG]: SOURCE: use audio file {filename}')
 
     return source

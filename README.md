@@ -51,6 +51,7 @@ Real-time processing on CPUs using multi-threading (desirable at least two or th
 * :smile: scale-invariant processing and multi-conditioned training of model
     * less includenced by the gain setting of audio devices
     * robust against assumed non-speech signals
+    * stable for long recording such as spoken dialogue data
 * :frowning_face: performance dependency on model and training data (general in ML methods)
     * latter part of long vowels tends not to be detected
     * coughs are sometimes detected (not included in training data)
@@ -87,7 +88,7 @@ Real-time processing on CPUs using multi-threading (desirable at least two or th
     * pyyaml
     * sounddevice
     * huggingface_hub
-    * savetensors
+    * safetensors
     * pyqtgraph (for real-time plot)
     * PySide6 (for real-time plot)    
 * ASR examples

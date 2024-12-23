@@ -88,11 +88,12 @@ def setup_logger(enable_logsave, logfilefmt):
 class AudioSourceFile(Source):
     """
     """
-    def __init__(self, filename, fs, nch, nframe, block=True):
+    def __init__(self, filename, fs, nch, nframe, tgt_chs=[0],block=True):
         self.filename = filename
         self.fs = fs
         self.nch = nch
         self.nframe = nframe
+        self.tgt_chs = tgt_chs
         self.block = block
         
     def open(self):
@@ -126,7 +127,7 @@ class AudioSourceFile(Source):
         if self.block is True:
             time.sleep(self.nframe/self.fs)
 
-        return self.s[pos_start:pos_end,:].numpy()
+        return self.s[pos_start:pos_end,self.tgt_chs].numpy()
 
     def progress(self):
         logger = logging.getLogger(__name__)
@@ -463,7 +464,7 @@ try:
                 self.logger.info(f'[ERROR]: {status}')
                 self.logger.info(f'[LOG]: callback-info: frame: {self.total_frames}, queue-size: {self.q.qsize()}')
                 
-            self.q.put(indata.copy())
+            self.q.put(indata[:,self.tgt_chs].copy())
 
             self.total_frames += frames
             self.count_frames += frames
@@ -474,11 +475,12 @@ try:
                                  f' queue-size: {self.q.qsize()}, arg frames: {frames}, arg indata.shape: {indata.shape}')
                 self.count_frames -= self.cycle_frames
         
-        def __init__(self, device, fs, nch, nlimit=-1):
+        def __init__(self, device, fs, nch, tgt_chs=[0], nlimit=-1):
             self.device = device
             self.nch = nch
             self.fs = fs
             self.nlimit = nlimit
+            self.tgt_chs = tgt_chs
 
             self.cycle_frames = self.fs * 10
             self.total_frames = 0
