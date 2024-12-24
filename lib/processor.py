@@ -17,7 +17,7 @@ class LMSblockFFT(Processor):
         pass
 
     # data: [Len, CH]
-    def update(self, data, isEOS):
+    def update(self, data, isEOS=False):
         X, D = data[:,0], data[:,1]        
         n_len = len(X)
 
@@ -55,7 +55,7 @@ class ChannelSelector(Processor):
     def __init__(self, tgt_chs=[0]):
         self.tgt_chs = tgt_chs
 
-    def update(self, data, isEOS):
+    def update(self, data, isEOS=False):
         return data[:,self.tgt_chs]
 
 
