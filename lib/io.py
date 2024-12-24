@@ -507,6 +507,41 @@ try:
                 return None
             return self.q.get()
 
+
+    class SoundDeviceSink(Sink):
+        """
+        """
+        def query_device():
+            return sd.query_devices()
+
+        def get_default_device():
+            return sd.default.device[0]
+        
+        def __init__(self, device, fs, nch, nframe):
+            self.device = device
+            self.nch = nch
+            self.fs = fs
+            self.nframe = nframe
+
+            self.stream = sd.OutputStream(device=self.device,
+                                          channels=self.nch,
+                                          samplerate=self.fs,
+                                          blocksize=int(nframe*2.0))
+
+        def open(self):
+            self.stream.start()
+
+        def close(self):
+            self.stream.stop()
+            self.stream.close()
+
+        """
+        data: [Len, Ch]
+        """
+        def write(self, data):
+            self.stream.write(data)
+            return data
+        
 except:
     pass
 
