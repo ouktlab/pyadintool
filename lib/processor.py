@@ -1,4 +1,5 @@
 from lib.pipeline import Processor
+import numpy as np
 
 def bwd_padding(data, nlen):
     n = int(np.ceil(np.log2(nlen)))
@@ -11,7 +12,7 @@ class LMSblockFFT(Processor):
     def __init__(self, L, mu):
         self.L = L
         self.w = np.zeros(L, dtype='float32')
-        self.buf_ = np.zeros(L, dtype='float32')
+        self.buf_ = np.zeros(L-1, dtype='float32')
         self.mu = mu
         pass
 
@@ -31,11 +32,12 @@ class LMSblockFFT(Processor):
 
         # error
         e = X - y
+        # lazy update :P
         for i in range(n_len):
             self.w = self.w + self.mu * 2 * e[i] * s[i:i+self.L] / n_len
 
         # buffer-shift
-        self.buf_ = s[-self.L:]
+        self.buf_ = s[-self.L+1:]
 
         return e.reshape(-1,1)
 

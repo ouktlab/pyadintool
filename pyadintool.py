@@ -35,7 +35,8 @@ def usage():
     parser.add_argument('--port', type=int,
                         help='port number of adin-server')
 
-    parser.add_argument('--tgt_chs', type=int, nargs="*", default=[0], help='selected channel list for audio source')
+    parser.add_argument('--tgt_chs', type=int, nargs="*",
+                        default=[0], help='selected channel list for audio source')
 
     #
     parser.add_argument('--freq', type=int,
