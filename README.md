@@ -55,6 +55,7 @@ Real-time processing on CPUs using multi-threading (desirable at least two or th
 * :frowning_face: performance dependency on model and training data (general in ML methods)
     * latter part of long vowels tends not to be detected
     * coughs are sometimes detected (not included in training data)
+    * consonat-like noise are sometimes detected
 
 ### [Silero VAD](https://github.com/snakers4/silero-vad) ###
 * Activity estimation based on machine learning model: LSTM
@@ -457,6 +458,7 @@ All default parameters need to be set in the configuration file. The command lin
 
 ### --in [IN] ###
 * Set input stream. "mic" or "file".
+
 ### --out [OUT] ### 
 * Set output stream. "file", "adinnet" and both "adinnet-file"
 * Data format of "adinnet"
@@ -484,6 +486,10 @@ All default parameters need to be set in the configuration file. The command lin
 
 ### --nch [NCH] ###
 * Set sampling frequency of input stream in Hz, e.g., 1
+
+### --tgt_chs [TGT_CHS] ###
+* Set target channels, e.g. --tgt_chs 0 1. 
+* Selected channels will be extracted from audio input stream. 
 
 ### --device [DEVICE] ###
 * Set ID or name of audio device, e.g., 1
@@ -531,5 +537,15 @@ All default parameters need to be set in the configuration file. The command lin
 * Set timestamp file list for batch processing
 * Available only if "--enable_list" option is set
 
-
 </details>
+
+## Citations
+```
+@inproceedings {
+  author={Ryu Takeda and Kazunori Komatani},
+  title={Scale-invariant Online Voice Activity Detection under Various Environments},
+  year={2024},
+  booktitle={Proceedings of Asia-Pacific Signal and Information Processing Association Annual Summit and Conference (APSIPA ASC)},
+  pages={},
+}
+```
