@@ -37,7 +37,7 @@ lms:
   L: 512
   mu: 0.0
   filterfile: conf/ecfilter.txt
-  floorfile: #conf/ecfloor.txt
+  floorfile: #conf/ecfloor.txt # comment out if you add noise for flooring.
 
 # voice activity detection
 tagger:

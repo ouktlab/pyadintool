@@ -13,6 +13,9 @@ Suitable for real-time applications on PC, e.g., spoken dialogue system
 * Support GUI plot for realtime monitoring
 * Support batch processing using filelist
 
+Tentative function
+* Echo canellation (supression of known signal) using pre-trained filter
+
 ### Supported Voice Activity Detection (VAD) ###
 Real-time processing on CPUs using multi-threading (desirable at least two or three cores)
 * Power-based VAD in time domain
@@ -372,6 +375,35 @@ It is better to create a new configuration file for this purpose.
 python3 pyadintool.py conf/default4asr.yaml --in mic --out file-adinnet --enable_logsave --enable_rawsave --server localhost --port 5530
 ```
 </details>
+
+
+### Example-12: Use echo canceller (tentative)
+<details><summary> expand </summary>
+
+This function assumes the cancellation of system utterances for spoken dialogue system.   
+Available under limited environment.
+* 2-channel audio inputs
+    * ch1: microphone input signal
+    * ch2: loopback signal (output signal from loud speaker)
+* Static transfer function
+    * position of mic. and loud speaker never changes
+* Filter estimation in advance for stable performance
+* Incomplete cancellation
+    * VAD may still detect system utterances
+
+Run "auxtool" to estimate filter in advance. Filter parameters are saved in "conf/ecfilter.txt" file.
+```
+python3 auxtool.py calib_filter
+```
+Run "pyadintool" with the configuration file for echo cancellation.
+```
+python3 pyadintool.py config/default4ecasr.yaml --in mic --enable_plot
+```
+If you want to update filter parameters dynamically, change the learning rate of "lms" in the configuration file.
+
+
+</details>
+
 
 ## Tuning/Change Configuration ##
 Some parameters should be set through yaml configuration files such as "default4asr.yaml", "power4asr.yaml" and "silero4asr.yaml".
