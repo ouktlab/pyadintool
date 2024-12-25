@@ -1,5 +1,5 @@
 
-def estimate_filter_for_echocanceller(L, mu, filename, n_sec, 
+def estimate_filter_for_echocanceller(L, mu, filterfile, floorfile, n_sec, 
                       freq, nch, tgt_chs, deviceid=None):
     import sounddevice as sd
     import numpy as np
@@ -16,11 +16,15 @@ def estimate_filter_for_echocanceller(L, mu, filename, n_sec,
     print('[LOG]: now estimating filter ...')    
     # lazy implementation :P
     lms = LMSblockFFT(L, mu)
+    errs = []
     for idx in range(0, len(wavdata), 1):
-        lms.update(wavdata[idx:idx+1,:], False)
-    lms.save(filename)
+        errs.append(lms.update(wavdata[idx:idx+1,:], False))
+    errs = np.concatenate(errs)
+    
+    lms.save(filterfile)
+    np.savetxt(floorfile, np.array([np.var(errs[-freq*int(n_sec/2):])]))
 
-    print(f'[LOG]: save to {filename}')
+    print(f'[LOG]: save to {filterfile} and {floorfile}')
 
 
 def usage():
@@ -37,8 +41,10 @@ def usage():
     parser.add_argument('mode', type=str)
 
     ### calibration of filter
-    parser.add_argument('--filter_filename', type=str, default='ec_filter.txt',
+    parser.add_argument('--filter_filename', type=str, default='conf/ecfilter.txt',
                         help='filename for the estimated filter of echo canceller')
+    parser.add_argument('--floor_filename', type=str, default='conf/ecfloor.txt',
+                        help='filename for the estimated variance of error signal')
     parser.add_argument('--L', type=int, default=512,
                         help='filter length of echo canceller')
     parser.add_argument('--mu', type=float, default=0.005,
@@ -68,6 +74,6 @@ if __name__ == "__main__":
     elif args.mode == 'calib_filter':
         print('[LOG]:', args)
         print('[LOG]: calibrate filter')
-        estimate_filter_for_echocanceller(args.L, args.mu, args.filter_filename,
+        estimate_filter_for_echocanceller(args.L, args.mu, args.filter_filename, args.floor_filename,
                           args.nsec, args.freq, args.nch, args.tgt_chs, args.deviceid) 
     pass

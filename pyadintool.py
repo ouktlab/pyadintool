@@ -1,5 +1,6 @@
 import lib.io
 import lib.pipeline
+import lib.processor
 import re
 import numpy as np
 import logging
@@ -36,7 +37,7 @@ def usage():
                         help='port number of adin-server')
 
     parser.add_argument('--tgt_chs', type=int, nargs="*",
-                        default=[0], help='selected channel list for audio source')
+                        help='selected channel list for audio source')
 
     #
     parser.add_argument('--freq', type=int,
@@ -85,6 +86,12 @@ def usage():
                         help='input audiofile list for batch processing')
     parser.add_argument('--tslist', type=str,
                         help='output labelfile list for batch processing')
+
+    #
+    parser.add_argument('--enable_ec',
+                        action='store_const', const=True,
+                        help='use LMS-based echo canceller. 2-channel audio for input is assumed.')
+    
     #
     args = parser.parse_args()
 
@@ -208,6 +215,20 @@ def setup_sink(config):
     return sinks, indices
 
 
+def setup_lms(config):
+    """
+    config: dict
+    """
+    logger = logging.getLogger(__name__)
+        
+    lms = lib.processor.LMSblockFFT(config['L'], config['mu'])
+    lms.load(config['filterfile'], config['floorfile'])
+    
+    logger.info(f'[LOG]: PROCESSOR: load echo-canceller: LMSblockFFT')
+
+    return lms
+
+
 def setup_tagger(config):
     """
     config: dict
@@ -266,6 +287,10 @@ def run_realtime(config):
     pipeline = lib.pipeline.Pipeline(source, sinks=sinks, indices=indices)
     
     # processors
+    if config['enable_ec'] is True:
+        lms = setup_lms(config['lms'])
+        pipeline.add(lms)        
+    
     tagger = setup_tagger(config['tagger'])
     pipeline.add(tagger)
 

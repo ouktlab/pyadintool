@@ -14,6 +14,7 @@ class LMSblockFFT(Processor):
         self.w = np.zeros(L, dtype='float32')
         self.buf_ = np.zeros(L-1, dtype='float32')
         self.mu = mu
+        self.floorscale = None
         pass
 
     # data: [Len, CH]
@@ -39,10 +40,16 @@ class LMSblockFFT(Processor):
         # buffer-shift
         self.buf_ = s[-self.L+1:]
 
+        # noise flooring
+        if self.floorscale is not None:
+            e += 1.5 * self.floorscale * np.random.randn(n_len).astype('float32')
+
         return e.reshape(-1,1)
 
-    def load(self, filename):
+    def load(self, filename, floorfile=None):
         self.w = np.loadtxt(filename)
+        if floorfile is not None:
+            self.floorscale = np.sqrt(np.loadtxt(floorfile))
         
     def save(self, filename):
         np.savetxt(filename, self.w)
