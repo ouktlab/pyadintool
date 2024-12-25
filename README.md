@@ -14,7 +14,7 @@ Suitable for real-time applications on PC, e.g., spoken dialogue system
 * Support batch processing using filelist
 
 Tentative function
-* Echo canellation (supression of known signal) using pre-trained filter
+* Echo canellation (suppression of a known signal) using pre-trained filter
 
 ### Supported Voice Activity Detection (VAD) ###
 Real-time processing on CPUs using multi-threading (desirable at least two or three cores)
@@ -382,6 +382,7 @@ python3 pyadintool.py conf/default4asr.yaml --in mic --out file-adinnet --enable
 
 This function assumes the cancellation of system utterances for spoken dialogue system.   
 Available under limited environment.
+* Valid only for "--in mic" option
 * 2-channel audio inputs
     * ch1: microphone input signal
     * ch2: loopback signal (output signal from loud speaker)
@@ -399,7 +400,7 @@ Run "pyadintool" with the configuration file for echo cancellation.
 ```
 python3 pyadintool.py config/default4ecasr.yaml --in mic --enable_plot
 ```
-If you want to update filter parameters dynamically, change the learning rate of "lms" in the configuration file.
+If you want to update filter parameters dynamically, change the learning rate ("mu") of "lms" in the configuration file.
 
 
 </details>
