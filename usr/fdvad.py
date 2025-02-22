@@ -202,7 +202,7 @@ class stftSlidingVAD(lib.pipeline.Processor):
     """
     """
     def __init__(self, yamlfile, min_frame,
-                 nshift=160, nbuffer=12000, device='cpu', dtype='float16', nthread=4):
+                 nshift=160, nbuffer=12000, device='cpu', dtype='float16', nthread=4, min_thre=-1.0, pow_dur=20):
 
         with open(yamlfile, 'r') as yml:
             try:
@@ -217,7 +217,10 @@ class stftSlidingVAD(lib.pipeline.Processor):
             self.dtype = torch.float16
         else:
             self.dtype = torch.float32
-                
+
+        self.min_thre = min_thre
+        self.pow_dur = pow_dur if self.model.n_bwd > pow_dur else self.model.n_bwd
+        
         self.wav2aspec = BufferedWav2AmpSpec(self.model.n_fwd, self.model.n_bwd)
         self.model.set_device(device)
 
@@ -270,12 +273,19 @@ class stftSlidingVAD(lib.pipeline.Processor):
             with torch.no_grad():
                 self.model.eval()
                 prob_raw, prob_smooth = self.model(feats.to(self.dtype).to(self.device))
-            
-            for i, lab in enumerate(prob_smooth):
-                outputs[i*self.nshift:(i+1)*self.nshift, 1] = lab
 
-            self.prev_lab = lab
-            outputs[(i+1)*self.nshift:,1] = lab
+            sum_feats = torch.mean(torch.sum(feats[:,-self.pow_dur:,:]**2, dim=2),dim=1)
+            for i, lab in enumerate(prob_smooth):
+                if sum_feats[i] >= self.min_thre:
+                    outputs[i*self.nshift:(i+1)*self.nshift, 1] = lab
+
+            # fraction
+            if sum_feats[i] >= self.min_thre:
+                outputs[(i+1)*self.nshift:,1] = lab
+                self.prev_lab = lab
+            else:
+                outputs[(i+1)*self.nshift:,1] = 0
+                self.prev_lab = 0
         else:
             outputs[:,1] = self.prev_lab
 

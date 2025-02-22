@@ -50,7 +50,8 @@ tagger:
     nbuffer: 12000
     device: cpu
     dtype: float32
-    nthread: 2
+    nthread: 3
+    #min_thre: 1.0
 
 # post processing
 postproc:

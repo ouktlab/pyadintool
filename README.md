@@ -401,7 +401,14 @@ Run "pyadintool" with the configuration file for echo cancellation.
 python3 pyadintool.py config/default4ecasr.yaml --in mic --enable_plot
 ```
 If you want to update filter parameters dynamically, change the learning rate ("mu") of "lms" in the configuration file.
-
+```
+enable_ec: True
+lms:
+  L: 512
+  mu: 0.0
+  filterfile: conf/ecfilter.txt
+  floorfile: 
+```
 
 </details>
 
@@ -467,6 +474,29 @@ probfilter:
     trp2_self: 0.99
     pw_1: 0.5
 ```
+* In addition, a detection threshold can be set to ignore low-power backgroud noises and residual signals from echo canceller. Change the "min_thre" value according to your environment. 
+```
+tagger:
+  package: usr.fdvad
+  class: stftSlidingVAD
+  params:
+    yamlfile: conf/dnnhmmfilter.yaml
+    min_frame: 2
+    nshift: 160
+    nbuffer: 12000
+    device: cpu
+    dtype: float32
+    nthread: 3
+    min_thre: 1.0  # no threshold if we set it to 0.0.  
+```
+* The thoreshold above can be estimated via pre-recording using "auxtool.py" in advance. 
+```
+$ python3 auxtools.py calib_framepower
+[LOG]: calibrate power
+[LOG]: now recording ...
+[LOG]: estimated frame-power: mean: 0.7391, std: 0.1577
+```
+
 </details>
 
 ### Silero VAD: threshold parameter
@@ -579,6 +609,7 @@ All default parameters need to be set in the configuration file. The command lin
   title={Scale-invariant Online Voice Activity Detection under Various Environments},
   year={2024},
   booktitle={Proceedings of Asia-Pacific Signal and Information Processing Association Annual Summit and Conference (APSIPA ASC)},
-  pages={},
+  pages={1--6},
+  doi={10.1109/APSIPAASC63619.2025.10848584},
 }
 ```
