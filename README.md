@@ -3,7 +3,7 @@
 Pyadintool is a pre-processing toolkit covering voice activity detection, recording, splitting and sending of audio stream. 
 This toolkit has been developed as a simple python clone of [adintool](https://github.com/julius-speech/julius/blob/master/adintool/README.md) in [Julius](https://github.com/julius-speech/julius) Japanese ASR. 
 This toolkit is developed mainly for academic research (easy to use) and example use. 
-Note that coding standars, error handling, comments and so on in this toolkit are not suitable for joint development. 
+Note that coding standards, error handling, comments and so on in this toolkit are not suitable for joint development. 
 
 ## Key Features ##
 ### Interface ###
@@ -14,7 +14,7 @@ Suitable for real-time applications on PC, e.g., spoken dialogue system
 * Support batch processing using filelist
 
 Tentative function
-* Echo canellation (suppression of a known signal) using pre-trained filter
+* Echo cancellation (suppression of a known signal) using pre-trained filter
 
 ### Supported Voice Activity Detection (VAD) ###
 Real-time processing on CPUs using multi-threading (desirable at least two or three cores)
@@ -36,14 +36,14 @@ Real-time processing on CPUs using multi-threading (desirable at least two or th
 * Performance may be affected by other settings
     * sampling frequency
     * amplitude characteristics of low-pass filter used for band limitation
-    * source separation, speech ehnancement, noise reduction and echo cancellation methods 
+    * source separation, speech enhancement, noise reduction and echo cancellation methods 
 
 ### Power-based VAD ###
-* Activity estimation based on signal power and its thresholding
+* Activity estimation based on signal power and its threshold parameter
 * Assumptions
     * number of speakers: only one (single speaker)
 * :smile: fast and light
-* :frowning_face: unrobust against noise
+* :frowning_face: un-robust against noise
 
 ### DNN-HMM VAD ###
 * Activity estimation based on machine learning model: HMM and DNN
@@ -52,13 +52,16 @@ Real-time processing on CPUs using multi-threading (desirable at least two or th
     * language: Japanese may be better (due to the model's training set)
     * acceptable latency: 0.2 sec. 
 * :smile: scale-invariant processing and multi-conditioned training of model
-    * less includenced by the gain setting of audio devices
+    * less influenced by the gain setting of audio devices
     * robust against assumed non-speech signals
     * stable for long recording such as spoken dialogue data
 * :frowning_face: performance dependency on model and training data (general in ML methods)
     * latter part of long vowels tends not to be detected
     * coughs are sometimes detected (not included in training data)
-    * consonat-like noise are sometimes detected
+    * consonant-like noise are sometimes detected
+* Several model parameters (2025/7/16 updated)
+    * v1: Trial setup for scale-invariant processing
+    * v2: Robustness against noise was improved to some extent. 
 
 ### [Silero VAD](https://github.com/snakers4/silero-vad) ###
 * Activity estimation based on machine learning model: LSTM
@@ -167,6 +170,7 @@ setup_win.bat
 
 
 ## Run with default settings ##
+### General procedure
 * Activate appropriate virtual environment
 ```
 . venv/main/bin/activate   # for ubuntu
@@ -195,6 +199,10 @@ python3 pyadintool.py devinfo
 ```
 python3 pyadintool.py conf/default4asr.yaml
 ``` 
+* We can also try the latest model version as
+```
+python3 pyadintool.py conf/default4asr_v2.yaml
+``` 
 
 * Change the audio device by using "--device" option. The device ID (or name) must be selected from the device list. 
 ```
@@ -208,6 +216,12 @@ python3 pyadintool.py conf/power4asr.yaml
 ```
 python3 pyadintool.py conf/silero4asr.yaml
 ``` 
+
+### Recommended trial command for monaural microphone input
+The following command displays the input signal and detection results for monitoring. 
+```
+python3 pyadintool.py conf/default4asr_v2.yaml --enable_plot
+```
 
 ## Examples ##
 ### Example-01: Set an audio file as input stream ###
@@ -427,7 +441,7 @@ Some parameters should be set through yaml configuration files such as "default4
 ### Common: margin parameters for audio segmentation ###
 <details><summary> expand </summary>
 
-* Change "magin_begin" and "margin_end" parameters. Their unit is "second".
+* Change "margin_begin" and "margin_end" parameters. Their unit is "second".
 * "shift_time" represents a buffering time (inevitable latency) of each method
     * the detected times of each segment are modified by this parameter in order to set the internal time to actual time. 
 * These default configurations are different among methods. 
