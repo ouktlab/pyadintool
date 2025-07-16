@@ -59,9 +59,9 @@ Real-time processing on CPUs using multi-threading (desirable at least two or th
     * latter part of long vowels tends not to be detected
     * coughs are sometimes detected (not included in training data)
     * consonant-like noise are sometimes detected
-* Several model parameters <span style="color: #ff7f50; ">(2025/7/16 updated)</span>
+* :ok_hand: Several model parameters <span style="color: #ff7f50; ">(2025/7/16 updated)</span>
     * v1 -- Trial setup for scale-invariant processing: Acc. 93.20, F1 94.14.
-    * v2 -- Robustness against noise was improved to some extent: Acc. 94.20, F1 94.61.
+    * v2 -- Robustness against noise was improved to some extent, and model size becomes lighter: Acc. 94.20, F1 94.61.
 
 ### [Silero VAD](https://github.com/snakers4/silero-vad) ###
 * Activity estimation based on machine learning model: LSTM
