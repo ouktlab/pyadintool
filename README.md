@@ -91,6 +91,7 @@ Real-time processing on CPUs using multi-threading (desirable at least two or th
 * Python3.10 or Python3.11 (Python3.9 if GUI plot is not used) and main libraries. See "requirements.txt" for details.
     * torch
     * torchaudio
+    * torchcodec (add 2025/11/06. required for audio file)
     * numpy
     * pyyaml
     * sounddevice
@@ -142,7 +143,7 @@ pip3 install -r requirements.txt
 
 * (Optional) ESPnet and Faster Whisper can be installed simply by
 ```
-pip3 install espnet torchaudio espnet_model_zoo
+pip3 install espnet torchaudio torchcodec espnet_model_zoo
 ```
 ```
 pip3 install faster_whisper

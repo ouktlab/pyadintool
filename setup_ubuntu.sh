@@ -27,7 +27,7 @@ if [ $stage -le 1 ]; then
     echo "-- stage 1 ------ "
     ${python} -m venv venv/main/
     . venv/main/bin/activate
-    ${python} -m pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+    ${python} -m pip install torch torchaudio torchcodec --index-url https://download.pytorch.org/whl/cpu
     ${python} -m pip install numpy pyyaml sounddevice huggingface_hub safetensors
 fi
 
@@ -52,7 +52,7 @@ if "${enable_espnet}"; then
     
     ${python_espnet} -m venv venv/espnet/
     . venv/espnet/bin/activate
-    ${python_espnet} -m pip install espnet torchaudio
+    ${python_espnet} -m pip install espnet torchaudio torchcodec
     ${python_espnet} -m pip install -U espnet_model_zoo
 fi
 
