@@ -5,6 +5,10 @@ This toolkit has been developed as a simple python clone of [adintool](https://g
 This toolkit is developed mainly for academic research (easy to use) and example use. 
 Note that coding standards, error handling, comments and so on in this toolkit are not suitable for joint development. 
 
+
+- 2025/11: release version 1.0 -- packaging as `pyadin`. we can `pip install` it from github repository.
+  - caution: directory structure/path had been changed
+
 ## Key Features ##
 ### Interface ###
 Suitable for real-time applications on PC, e.g., spoken dialogue system
@@ -630,13 +634,13 @@ It is better to follow the `setup_ubutu.sh` for their installtions.
 python3 -m venv venv
 . venv/bin/activate
 ```
-#### 2. Install pyadintool by pip
+#### 2. Install pyadintool by pip from GitHub
 ```
-python3 -m pip install https://github.com/ouktlab/pyadintool.git
+python3 -m pip install git+https://github.com/ouktlab/pyadintool.git
 ```
 Please use the following command if you want to enable wave plot.
 ```
-python3 -m pip install pyadintool[gui]@https://github.com/ouktlab/pyadintool.git
+python3 -m pip install pyadintool[gui]@git+https://github.com/ouktlab/pyadintool.git
 ```
 
 #### 3. Import "pyadin" package (not "pyadintool")
