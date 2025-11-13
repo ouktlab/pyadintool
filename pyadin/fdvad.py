@@ -9,10 +9,10 @@ import numpy as np
 from os.path import dirname
 from importlib import import_module
 from huggingface_hub import PyTorchModelHubMixin
-import lib.pipeline
+import pyadin.pipeline as pl
 
 
-def _load_model(package, classname, params, path=None):
+def _load_model(package, classname, params=None, path=None):
     """
     """
     module = import_module(package)
@@ -198,19 +198,22 @@ class BufferedWav2AmpSpec:
         return self.get_feats_if_possible(req_frame)
 
 
-class stftSlidingVAD(lib.pipeline.Processor):
+class stftSlidingVAD(pl.Processor):
     """
     """
-    def __init__(self, yamlfile, min_frame,
+    def __init__(self, dnnhmmconf, min_frame,
                  nshift=160, nbuffer=12000, device='cpu', dtype='float16', nthread=4, min_thre=-1.0, pow_dur=20):
 
-        with open(yamlfile, 'r') as yml:
-            try:
-                config = yaml.safe_load(yml)
-            except yaml.YAMLError as exc:
-                print(exc)
-                quit()
-            
+        if type(dnnhmmconf) == str:
+            with open(dnnhmmconf, 'r') as yml:
+                try:
+                    config = yaml.safe_load(yml)
+                except yaml.YAMLError as exc:
+                    print(exc)
+                    quit()
+        elif type(dnnhmmconf) == dict:
+            config = dnnhmmconf
+        
         self.model = DNNHMMFilter(**config)
 
         if dtype == 'float16':

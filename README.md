@@ -617,6 +617,47 @@ All default parameters need to be set in the configuration file. The command lin
 
 </details>
 
+
+## Use as Package
+### Pip install via github
+#### 0. Install system libraries
+We need to install the system libraries, e.g., of Ubuntu by `apt install` command.   
+It may include `alsa-utils`, `libasound2-dev`, `libporaudio2`, and so on.   
+It is better to follow the `setup_ubutu.sh` for their installtions.
+
+#### 1. Activate virtual environment
+```
+python3 -m venv venv
+. venv/bin/activate
+```
+#### 2. Install pyadintool by pip
+```
+python3 -m pip install https://github.com/ouktlab/pyadintool.git
+```
+Please use the following command if you want to enable wave plot.
+```
+python3 -m pip install pyadintool[gui]@https://github.com/ouktlab/pyadintool.git
+```
+
+#### 3. Import "pyadin" package (not "pyadintool")
+```
+import pyadin
+```
+
+### Example
+#### Run test program
+For example, please create `main.py` which is the same source code as `pyadintool.py`
+```
+import pyadin
+if __name__ == "__main__":
+    pyadin.app_pyadintool()
+```
+Then, run the `main.py` with package's default configuration file `egs_conf/default4asr.yaml`.
+```
+python3 main.py egs_conf/default4asr.yaml --enable_plot
+```
+
+
 ## Citations
 ```
 @inproceedings {

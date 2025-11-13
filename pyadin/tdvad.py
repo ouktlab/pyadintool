@@ -3,8 +3,8 @@
 """
 import numpy as np
 import logging
-import lib.pipeline as pl
-import lib.io as io
+import pyadin.pipeline as pl
+import pyadin.io as io
 
 
 class PairedBuffer:

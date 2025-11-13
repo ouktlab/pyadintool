@@ -1,6 +1,5 @@
 from abc import ABCMeta, abstractmethod
 
-
 class Source(metaclass=ABCMeta):
     """
     read data from an input stream and pass them to subsequent processing
@@ -145,7 +144,7 @@ class Pipeline:
             judge = self._True()
 
         try:
-            while judge.do() and (ret := self.update()) is not None:            
+            while judge.do() and (ret := self.update()) is not None:    
                 pass
         except KeyboardInterrupt:
             print('')

@@ -8,7 +8,7 @@ import wave
 import time
 import queue
 import logging
-from lib.pipeline import Source, Sink
+from pyadin.pipeline import Source, Sink
 
 
 def path_embed_tag(path, rotateid=None):
@@ -43,7 +43,7 @@ def path_embed_tag(path, rotateid=None):
     return path
 
 
-def setup_logger(enable_logsave, logfilefmt):
+def setup_logger(enable_logsave, logfilefmt, level=None):
     """
     enable_logsave: bool
     logfilefmt: str
@@ -56,10 +56,12 @@ def setup_logger(enable_logsave, logfilefmt):
 
     #
     handlers = []
+    if level is None:
+        level = INFO
 
     # set up stream handler
     stream_handler = StreamHandler()
-    stream_handler.setLevel(INFO)
+    stream_handler.setLevel(level)
     stream_handler.setFormatter(Formatter("%(message)s"))
     handlers.append(stream_handler)
 
@@ -236,7 +238,45 @@ class AdinnetSinkSocket(Sink):
 
         ##
         pass
+    
+class AudioSinkQueue(Sink):
+    """
+    """
+    def __init__(self):
+        self.state = _SEG_STATE_NONACTIVE
 
+    def set(self, queue):
+        self.queue = queue
+
+    def open(self):
+        pass
+
+    def close(self):
+        pass
+    
+    def write(self, data):
+        """
+        data: list of dict
+        """
+        if type(data) is not list:            
+            logger = logging.getLogger(__name__)
+            logger.info(f'[ERROR]: input data type is not [list], but [{data.type}].')
+            raise TypeError()
+
+        for packet in data:
+            state = packet['state']
+
+            # non-active packet
+            if state == _SEG_STATE_NONACTIVE:
+                return
+
+            audio = packet.get('audio')
+            if audio is not None and state != _SEG_STATE_NONACTIVE:
+                self.queue.put({'is_end': False, 'audio':audio})
+
+            # end of segment
+            if state == _SEG_STATE_END:
+                self.queue.put({'is_end': True})
 
 class SegmentedAudioSinkFile(Sink):
     """

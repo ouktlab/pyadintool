@@ -1,4 +1,4 @@
-import lib.adinserver
+import pyadin.adinserver
 
 
 def espnet_main(device):
@@ -84,7 +84,7 @@ def espnet_main(device):
     hostname = 'localhost'
     port = 5530
     
-    adinserver = lib.adinserver.AdinnetServer(hostname, port)
+    adinserver = pyadin.adinserver.AdinnetServer(hostname, port)
     adinserver.start()
 
     loop(model, adinserver)

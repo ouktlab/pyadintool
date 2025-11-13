@@ -41,10 +41,24 @@ lms:
 
 # voice activity detection
 tagger:
-  package: usr.fdvad
+  package: pyadin.fdvad
   class: stftSlidingVAD
   params:
-    yamlfile: conf/dnnhmmfilter.yaml
+    dnnhmmconf:
+      probfilter:
+        classname: BinaryProbFilter
+        package: pyadin.fdvad
+        params:
+          trp1_self: 0.99
+          trp2_self: 0.99
+          pw_1: 0.5
+      classifier:
+        classname: SITEVoiceClassifierV2
+        package: pyadin.nn
+        path: ouktlab/pyadintool-fdvad-SITEVoiceClassifierV2-l
+      n_bwd: 50
+      n_fwd: 0
+      n_offset: 20
     min_frame: 2
     nshift: 160
     nbuffer: 12000
@@ -55,7 +69,7 @@ tagger:
 
 # post processing
 postproc:
-  package: usr.tdvad
+  package: pyadin.tdvad
   class: PostProc
   params:
     freq: 16000

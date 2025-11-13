@@ -35,7 +35,7 @@ enable_ec: False
 
 # voice activity detection
 tagger:
-  package: usr.tdvad
+  package: pyadin.tdvad
   class: SimpleVAD
   params:
     n_win: 800
@@ -46,7 +46,7 @@ tagger:
 
 # post processing
 postproc:
-  package: usr.tdvad
+  package: pyadin.tdvad
   class: PostProc
   params:
     freq: 16000

@@ -1,4 +1,4 @@
-from lib.pipeline import Processor
+from pyadin.pipeline import Processor
 import numpy as np
 
 def bwd_padding(data, nlen):

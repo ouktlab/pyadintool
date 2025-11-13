@@ -6,8 +6,8 @@ import torch
 import logging
 from silero_vad import load_silero_vad, read_audio
 
-import lib.pipeline as pl
-import usr.tdvad as tdvad
+import pyadin.pipeline as pl
+import pyadin.tdvad as tdvad
 
 """
   Silero VAD

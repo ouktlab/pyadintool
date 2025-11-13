@@ -1,10 +1,36 @@
 [project]
 name = "pyadintool"
 readme = "README.md"
-license = {file = "LICENSE"}
-version = "0.1"
-
+license-files = ["LICENSE"]
+version = "1.0"
 classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",	
 ]
+requires-python = ">=3.10"
+dependencies = [
+  "torch",
+  "torchaudio",
+  "torchcodec",
+  "numpy",
+  "pyyaml",
+  "sounddevice",
+  "huggingface_hub",
+  "safetensors"
+]
+
+[tool.setuptools.packages.find]
+include = ["pyadin"]
+
+[project.optional-dependencies]
+gui = ["pyqtgraph", "PySide6"]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+torchaudio = { index = "pytorch-cpu" }

@@ -3,11 +3,11 @@
 # (required 3.9 for networkx used in torch, 3.10 for shiboken6 used in pyqtgraph)
 
 ### change these configurations according to your environment
-python=python3.10
+python=python3
 enable_espnet=true #false
-python_espnet=python3.10
+python_espnet=python3
 enable_whisper=false #true
-python_whisper=python3.10
+python_whisper=python3
 ###
 
 #
