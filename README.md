@@ -63,7 +63,7 @@ Real-time processing on CPUs using multi-threading (desirable at least two or th
     * latter part of long vowels tends not to be detected
     * coughs are sometimes detected (not included in training data)
     * consonant-like noise are sometimes detected
-* :ok_hand: Several model parameters <span style="color: #ff7f50; ">(2025/7/16 updated)</span>
+* :ok_hand: Several model parameters (2025/7/16 updated)</span>
     * v1 -- Trial setup for scale-invariant processing: Acc. 93.20, F1 94.14.
     * v2 -- Robustness against noise was improved to some extent, and model size becomes lighter: Acc. 94.20, F1 94.61.
 
@@ -678,13 +678,16 @@ if __name__ == "__main__":
             audioseg = q.get()
             if audioseg['is_end'] is False:
                 # some processes here
+                #print('', len(audioseg['audio']), type(audioseg['audio']), flush=True)
                 pass
             del audioseg
     pipeline.close()
 ```
+The stored data in the queue is dict type and has two keys: `is_end` and  `audio`. If the value of `is_end` is `True`, audio (speech signal) segment is stored as a value of the `audio` key. If the value of `is_end` is `True`, speech section has finished. Non-speech segments are not stored in the `Queue`.
 
-The default configuration file is in the `egs_conf` package's directory.   
-The output sink is set to the `Queue` by `--out queue` option as default. 
+
+The default configuration file is in the `egs_conf` package's directory. 
+The output sink is set to the `Queue` by `--out queue` option as default in the file. 
 ```
 python3 egs_increment.py egs_conf/default4inc.yaml
 ```
