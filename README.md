@@ -95,7 +95,7 @@ Real-time processing on CPUs using multi-threading (desirable at least two or th
 * Python3.10 or Python3.11 (Python3.9 if GUI plot is not used) and main libraries. See "requirements.txt" for details.
     * torch
     * torchaudio
-    * torchcodec (add 2025/11/06. required for audio file)
+    * torchcodec (added 2025/11/06. required for audio file)
     * numpy
     * pyyaml
     * sounddevice
@@ -539,11 +539,12 @@ All default parameters need to be set in the configuration file. The command lin
 <details><summary> expand </summary>
 
 ### --in [IN] ###
-* Set input stream. "mic" or "file".
+* Set input stream. `mic` or `file`.
 
 ### --out [OUT] ### 
-* Set output stream. "file", "adinnet" and both "adinnet-file"
-* Data format of "adinnet"
+* Set output stream. `file`, `adinnet`, `queue` and both `adinnet-file`
+  *  `queue` is used for raw audio data processing
+* Data format of `adinnet` in TCP/IP communication
     * segmented data
         * 4-byte int: represents audio data length in bytes (N)
         * N bytes: binary audio data
@@ -554,56 +555,56 @@ All default parameters need to be set in the configuration file. The command lin
 * Set output filename 
 
 ### --startid [ID] ###
-* Set start id for rotation filename, e.g., 0
-* "%R" in filename is replaced into the current rotation ID
+* Set start id for rotation filename, e.g., `0`
+* `%R` in filename is replaced into the current rotation ID
 
 ### --server [HOSTNAME] ###
-* Set hostnames of adinserver, e.g., localhost
+* Set hostnames (or IPs) of adinserver, e.g., `localhost`
 
 ### --port [PORT] ###
-* Set ports of adinserver, e.g., 5530
+* Set ports of adinserver, e.g., `5530`
 
 ### --freq [FREQ] ###
-* Set sampling frequency of input stream in Hz, e.g., 16000
+* Set sampling frequency of input stream in Hz, e.g., `16000`
 
 ### --nch [NCH] ###
-* Set sampling frequency of input stream in Hz, e.g., 1
+* Set sampling frequency of input stream in Hz, e.g., `1`
 
 ### --tgt_chs [TGT_CHS] ###
-* Set target channels, e.g. --tgt_chs 0 1. 
+* Set target channels, e.g., as `--tgt_chs 0 1`. 
 * Selected channels will be extracted from audio input stream. 
 
 ### --device [DEVICE] ###
-* Set ID or name of audio device, e.g., 1
+* Set ID or name of audio device, e.g., `1`
 
 ### --infile [INFILE] ###
-* Set input audio filename if "--in file" is valid
-* Available only if "--in file" option is set
+* Set input audio filename if `--in file` is valid
+* Available only if `--in file` option is set
 
 ### --enable_logsave ###
 * Save log to the file
 
 ### --logfilefmt [LOGFILEFMT] ###
 * Set fileformat for log
-* Available only if "--enable_logsave" option is set
+* Available only if `--enable_logsave` option is set
 
 ### --enable_rawsave ###
 * Save raw input stream to the file
 
 ### --rawfilefmt [LOGFILEFMT] ###
-* Set fileformat for raw audio data, e.g., "rawfile_%Y%d%m_%R.wav"
-* Available only if "--enable_rawsave" option is set
+* Set fileformat for raw audio data, e.g., `rawfile_%Y%d%m_%R.wav`
+* Available only if `--enable_rawsave` option is set
 
 ### --rotate_min [ROTATE_MIN] ###
 * Set duration time in minutes for saving raw audio files, e.g., 30
-* Available only if "--enable_rawsave" option is set
+* Available only if `--enable_rawsave` option is set
 
 ### --enable_timestamp ###
 * Save timestamp of audio segments to the file
 
 ### --timestampfile [TIMESTAMPFILE] ###
 * Set filename for saving timestamps
-* Available only if "--enable_timestamp" option is set
+* Available only if `--enable_timestamp` option is set
 
 ### --enable_plot ###
 * Plot waveform and speech activity on GUI
@@ -613,11 +614,11 @@ All default parameters need to be set in the configuration file. The command lin
 
 ### --inlist [INLIST] ###
 * Set audio file list for batch processing
-* Available only if "--enable_list" option is set
+* Available only if `--enable_list` option is set
 
 ### --tslist [TSLIST] ###
 * Set timestamp file list for batch processing
-* Available only if "--enable_list" option is set
+* Available only if `--enable_list` option is set
 
 </details>
 
@@ -661,6 +662,43 @@ Then, run the `main.py` with package's default configuration file `egs_conf/defa
 python3 main.py egs_conf/default4asr.yaml --enable_plot
 ```
 
+#### Realtime processing of segmented audio data 
+If you want to process raw audio data segmented by VAD, you can use `setup_pipeline` module.   
+The following is its example (`egs_increment.py`), and we can access the audio data via `Queue`.  
+```
+import pyadin
+import queue
+
+if __name__ == "__main__":
+    q = queue.Queue()
+    pipeline = pyadin.setup_pipeline(q)
+    pipeline.open()
+    while pipeline.update() is not None:
+        while q.empty() is False:
+            audioseg = q.get()
+            if audioseg['is_end'] is False:
+                # some processes here
+                pass
+            del audioseg
+    pipeline.close()
+```
+
+The default configuration file is in the `egs_conf` package's directory.   
+The output sink is set to the `Queue` by `--out queue` option as default. 
+```
+python3 egs_increment.py egs_conf/default4inc.yaml
+```
+
+Audio device access may be allowed only in the main thread (process). 
+Therefore, your processing may be better to be implemented as sub-thread/process if you use `multiprocessing` libarary. 
+
+#### Adinserver and others
+We can access our python modules in the `pyadin` directory by importing them.   
+The following is the case of `adinserver`. 
+```
+import pyadin.adinserver
+adinserver = pyadin.adinserver.AdinnetServer('localhost', 5530)
+```
 
 ## Citations
 ```
