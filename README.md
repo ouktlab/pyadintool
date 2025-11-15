@@ -669,7 +669,7 @@ We can run directly `pyadintool` and `pyadinauxtool` as commands instead of `pya
 pyadintool egs_conf/default4asr.yaml --enable_plot
 ```
 
-We can switch the configuration file to your own one at your local directory.
+We can also switch the configuration file to your own one at your local directory.
 
 #### Realtime processing of segmented audio data 
 If you want to process raw audio data segmented by VAD, you can use `setup_pipeline` module.   
@@ -693,6 +693,8 @@ if __name__ == "__main__":
     pipeline.close()
 ```
 The stored data in the queue is dict type and has two keys: `is_end` and  `audio`. If the value of `is_end` is `True`, audio (speech signal) segment is stored as a value of the `audio` key. If the value of `is_end` is `True`, speech section has finished. Non-speech segments are not stored in the `Queue`.
+
+Note that the segment size is decided by the `souddevice` library. The size usually ranges from 160 samples (0.01 s) to 800 samples (0.05 s). 
 
 
 The default configuration file is in the `egs_conf` package's directory. 
