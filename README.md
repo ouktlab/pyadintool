@@ -662,6 +662,15 @@ Then, run the `main.py` with package's default configuration file `egs_conf/defa
 python3 main.py egs_conf/default4asr.yaml --enable_plot
 ```
 
+#### Use package command
+We can run directly `pyadintool` and `pyadinauxtool` as commands instead of `pyadintool.py` and `auxtool.py` after `pip istall`.
+
+```
+pyadintool egs_conf/default4asr.yaml --enable_plot
+```
+
+We can switch the configuration file to your own one at your local directory.
+
 #### Realtime processing of segmented audio data 
 If you want to process raw audio data segmented by VAD, you can use `setup_pipeline` module.   
 The following is its example (`egs_increment.py`), and we can access the audio data via `Queue`.  

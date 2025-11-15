@@ -20,6 +20,10 @@ dependencies = [
   "safetensors"
 ]
 
+[project.scripts]
+pyadintool = "pyadin:app_pyadintool"
+pyadinauxtool = "pyadin:app_auxtool"
+
 [tool.setuptools.packages.find]
 include = ["pyadin"]
 
