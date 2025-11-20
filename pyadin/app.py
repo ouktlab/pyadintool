@@ -494,7 +494,7 @@ def estimate_framepower(n_sec, freq,
     import sounddevice as sd
     import numpy as np
     import torch
-    from usr.fdvad import BufferedWav2AmpSpec
+    from pyadin.fdvad import BufferedWav2AmpSpec
 
     nlimit = freq * n_sec
     pow_dur = default_pow_dur if n_bwd > default_pow_dur else n_bwd

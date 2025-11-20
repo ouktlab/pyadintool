@@ -233,7 +233,7 @@ python3 pyadintool.py conf/default4asr_v2.yaml --enable_plot
 <details><summary> expand </summary>
 
 ```
-python3 pyadintool.py conf/default4asr.yaml --in file
+python3 pyadintool.py conf/default4asr.yaml --in file --infile audio.wav
 ```
 ```
 echo auido.wav | python3 pyadintool.py conf/default4asr.yaml --in file
@@ -435,6 +435,8 @@ lms:
 ## Tuning/Change Configuration ##
 Some parameters should be set through yaml configuration files such as "default4asr.yaml", "power4asr.yaml" and "silero4asr.yaml".
 
+If you want to discad `backgournd speech` (not target speaker) with low power, please set the `min_thre` parameter that is a threahold of power (energy) feature.
+
 ### Common: sampling frequency ###
 <details><summary> expand </summary>
 
@@ -452,7 +454,7 @@ Some parameters should be set through yaml configuration files such as "default4
 * These default configurations are different among methods. 
 ```
 postproc:
-  package: usr.tdvad
+  package: pyadin.tdvad
   class: PostProc
   params:
     freq: 16000
@@ -468,7 +470,7 @@ postproc:
 * Change "flramp" parameter ranged in [0, 32768]. Smaller is more sensitive to signal power
 * Change "n_win" parameter to use longer window for calculation of moving averaged power
 ```
-  package: usr.tdvad
+  package: pyadin.tdvad
   class: SimpleVAD
   params:
     n_win: 800
@@ -480,26 +482,29 @@ postproc:
 </details>
 
 ### DNN-HMM VAD: threshold parameter
-<details><summary> expand </summary>
-
-* Change "pw_1" parameter in "dnnhmmfilter.yaml". Smaller is more sensitive to speech signal.
+* Change "pw_1" parameter in `probfilter` class. Smaller is more sensitive to speech signal.
 * The value "0.1" or smaller may be effective under high SNR environments. 
-```
-probfilter:
-  classname: BinaryProbFilter
-  package: usr.fdvad
-  params:
-    trp1_self: 0.99
-    trp2_self: 0.99
-    pw_1: 0.5
-```
-* In addition, a detection threshold can be set to ignore low-power backgroud noises and residual signals from echo canceller. Change the "min_thre" value according to your environment. 
+* A detection threshold using power (energy) feature can be set to ignore low-power backgroud noises, speech signal and residual signals from echo canceller. Change the "min_thre" value according to your environment. 
 ```
 tagger:
-  package: usr.fdvad
+  package: pyadin.fdvad
   class: stftSlidingVAD
   params:
-    yamlfile: conf/dnnhmmfilter.yaml
+    dnnhmmconf:
+      probfilter:
+        classname: BinaryProbFilter
+        package: pyadin.fdvad
+        params:
+          trp1_self: 0.99
+          trp2_self: 0.99
+          pw_1: 0.5
+      classifier:
+        classname: SITEVoiceClassifier
+        package: pyadin.nn
+        path: ouktlab/pyadintool-fdvad-SITEVoiceClassifier-l-avg10-v2408
+      n_bwd: 50
+      n_fwd: 0
+      n_offset: 20
     min_frame: 2
     nshift: 160
     nbuffer: 12000
@@ -508,7 +513,7 @@ tagger:
     nthread: 3
     min_thre: 1.0  # no threshold if we set it to 0.0.  
 ```
-* The thoreshold above can be estimated via pre-recording using "auxtool.py" in advance. 
+* The thoreshold above can be estimated via pre-recording using "auxtool.py" in advance because this threshold value is obviously affected by your recording conditions.
 ```
 $ python3 auxtools.py calib_framepower
 [LOG]: calibrate power
@@ -516,7 +521,6 @@ $ python3 auxtools.py calib_framepower
 [LOG]: estimated frame-power: mean: 0.7391, std: 0.1577
 ```
 
-</details>
 
 ### Silero VAD: threshold parameter
 <details><summary> expand </summary>
@@ -524,7 +528,7 @@ $ python3 auxtools.py calib_framepower
 * Change "thre" parameter. Smaller is more sensitive to signal power
 ```
 tagger:
-  package: usr.silerovad
+  package: pyadin.silerovad
   class: SileroVAD
   params:
     freq: 16000
