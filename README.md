@@ -6,6 +6,7 @@ This toolkit is developed mainly for academic research (easy to use) and example
 Note that coding standards, error handling, comments and so on in this toolkit are not suitable for joint development. 
 
 
+- 2026/05: A bug may be fixed. VAD behavior becomes more stable. 
 - 2025/11: release version 1.0 -- packaging as `pyadin`. we can `pip install` it from github repository.
   - caution: directory structure/path had been changed
 
