@@ -26,7 +26,13 @@ def _load_model(package, classname, params=None, path=None):
         model.load_state_dict(ckp['model_state_dict'], strict=False)
     else:
         model = getattr(module, classname).from_pretrained(path)
+
+    n_params = 0
+    for p in model.parameters():
+        if p.requires_grad:
+            n_params += p.numel()
         
+    print('[LOG]: No. of params: ', n_params)
     return model
 
 
@@ -168,7 +174,7 @@ class BufferedWav2AmpSpec:
         ## 
         if n_frame >= self.n_block:
             # 
-            n_span = n_frame - self.n_block
+            n_span = n_frame - self.n_block + 1
             #
             feats = [self.buf_feats]
             for t in range(n_span):
